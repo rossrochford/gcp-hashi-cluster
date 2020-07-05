@@ -1,0 +1,33 @@
+
+advertise {
+  http = "{{ "/node-ip" | plugin "ctn" }}:4646"
+  rpc  = "{{ "/node-ip" | plugin "ctn" }}:4647"
+  serf = "{{ "/node-ip" | plugin "ctn" }}:4648"
+}
+
+# docs: https://nomadproject.io/docs/configuration/server/
+server {
+  enabled          = true
+  bootstrap_expect = 3  # waits for N servers to become available
+
+  server_join {
+    retry_join = ["provider=gce project_name={{ "/project-id" | plugin "ctp" }} tag_value=nomad-server"]
+    retry_interval = "10s"
+  }
+}
+
+vault {
+  enabled = true
+  address = "https://{{ "/nomad-config/vault-host" | plugin "ctn" }}:8200"  # note: some examples use https://    (see: https://learn.hashicorp.com/nomad/vault-integration/vault-pki-nomad)
+
+  ca_file = "/etc/vault.d/certs/vault_rootCA.pem"
+  cert_file = "/etc/vault.d/certs/certificate.pem"
+  key_file = "/etc/vault.d/certs/key.pem"
+
+  # Setting the create_from_role option causes Nomad to create tokens for tasks
+  # via the provided role. This allows the role to manage what policies are
+  # allowed and disallowed for use by tasks.
+  create_from_role = "nomad-cluster"
+
+  # note: a token is required but we're setting it in the systemd nomad-server.service file
+}

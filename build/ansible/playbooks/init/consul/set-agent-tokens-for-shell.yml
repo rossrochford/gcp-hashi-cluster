@@ -1,0 +1,11 @@
+---
+- hosts: hashi_servers:hashi_clients:traefik:vault_servers
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  serial: 2
+  any_errors_fatal: true
+  become: yes
+  become_method: sudo
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+  tasks:
+    - shell: "/scripts/services/consul/init/set_agent_token_for_shell.sh {{ consul_bootstrap_token }}"

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+TAG=$1
+
+PROJECT_INFO=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info)
+
+PROJECT_ID=$(echo $PROJECT_INFO | jq -r ".cluster_service_project_id")
+REGION=$(echo $PROJECT_INFO | jq -r ".region")
+
+NODE_IP_ADDRESSES=$(/usr/local/bin/discover addrs provider=gce project_name="$PROJECT_ID" zone_pattern="$REGION.*" tag_value="$TAG")
+
+echo $NODE_IP_ADDRESSES

@@ -1,0 +1,21 @@
+{
+  "service": {
+    "checks": [],
+    "connect": {
+      "sidecar_service": {
+        "proxy": {
+          "upstreams": [
+            {%- for di in routes %}
+            {"destination_name": "{{ di.service_name }}", "local_bind_port": {{ di.local_bind_port }}}{% if not loop.last %},{% endif %}
+            {%- endfor %}
+          ]
+        }
+      }
+    },
+    "enable_tag_override": false,
+    "id": "traefik",
+    "name": "traefik",
+    "port": 8080,
+    "tags": []
+  }
+}

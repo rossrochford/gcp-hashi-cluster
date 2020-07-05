@@ -1,0 +1,57 @@
+# region     = "europe"
+datacenter = "dc1"
+
+data_dir = "/opt/nomad"
+
+log_file = "/opt/nomad/logs/"
+log_level = "DEBUG"
+log_json = true
+enable_syslog = false
+enable_debug = true
+
+
+consul {
+  # The address to the Consul agent.
+
+  address = "{{ "/node-ip" | plugin "ctn" }}:8501"  # NB: always point to a local client, never point to a Consul server agent (though this is ok if your local agent is a server)
+
+  # The service name to register the server and client with Consul.
+  server_service_name = "nomad-server"
+  client_service_name = "nomad-client"
+
+  # Enables automatically registering the services.
+  auto_advertise = true
+
+  # Enabling the server and client to bootstrap using Consul.
+  server_auto_join = true
+  client_auto_join = true
+
+  # not sure about this one, it's false by default
+  # "Specifies if Consul health checks should bind to the advertise address. By default, this is the bind address."
+  checks_use_advertise = true
+
+  allow_unauthenticated = true  # todo: it's more secure to set this to false
+
+  token = "{{ "/nomad-config/consul-token" | plugin "ctn" }}"
+  # auth = "username:password"   # HTTP basic auth
+  # to add SSL see: https://nomadproject.io/docs/configuration/consul/#custom-ssl
+
+  ssl = true
+  ca_file = "{{ "/nomad-config/consul-ca-file" | plugin "ctn" }}"
+  cert_file = "{{ "/nomad-config/consul-cert-file" | plugin "ctn" }}"
+  key_file = "{{ "/nomad-config/consul-key-file" | plugin "ctn" }}"
+}
+
+
+# note: to access Vault I think we need a 'tls' stanza (see: https://learn.hashicorp.com/nomad/vault-integration/vault-pki-nomad#configure-nomad-to-use-tls)
+# and also set vault.cert_file and vault.key_file above
+
+
+telemetry {
+  statsd_address = "127.0.0.1:8125"
+
+  collection_interval = "1s"
+  disable_hostname = true
+  publish_allocation_metrics = true
+  publish_node_metrics = true
+}

@@ -1,0 +1,22 @@
+
+#  ansible-inventory --list -i auth.gcp.yml
+
+plugin: gcp_compute
+projects:
+  - {{ cluster_service_project_id }}
+auth_kind: serviceaccount
+
+
+groups:
+  hashi_server_1: "name == 'hashi-server-1'"
+  hashi_servers: "(labels.node_type) == 'hashi_server'"
+  hashi_clients: "(labels.node_type) == 'hashi_client'"
+  traefik: "(labels.node_type) == 'traefik'"
+  vault_servers: "(labels.node_type) == 'vault'"
+  vault_server_1: "name == 'vault-server-1'"
+
+hostnames:
+  - private_ip
+  - name
+
+service_account_file: /etc/collected-keys/sa-credentials.json

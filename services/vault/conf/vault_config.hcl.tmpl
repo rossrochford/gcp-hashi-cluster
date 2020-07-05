@@ -1,0 +1,65 @@
+
+# For Vault we'll use a very simple setup:
+#  - auto-unseal: gcpckms
+#  - storage backend: consul
+#  - secrets engine:  kv  (v1)
+#  - auth with gce roles (Vault Agent also authenticates with gce)
+#  - config templating and key rotation via Vault Agent
+
+# should our apps request secrets via the agent, or through Nomad or through Vault's HTTP API?
+
+# Let's run Vault only on hashi-servers and have Nomad clients request secrets over the network. How can it auto-discover them?
+
+
+# production hardening: https://learn.hashicorp.com/vault/operations/production-hardening
+
+# example with audit logging to stackdriver: https://github.com/sethvargo/vault-on-gke
+
+ui = false
+
+
+log_level = "INFO"
+log_format = "json"
+
+
+storage "consul" {
+  # note: consul client_addr is set to 127.0.0.1 on vault nodes
+  address = "127.0.0.1:8500"
+  path    = "vault"
+  # todo: /vault should be restricted in consul with an ACL and a token should be set here  (however, we'll probably want a default_policy of "allow" so it doesn't lock down everything)
+  # see: https://learn.hashicorp.com/vault/day-one/ops-deployment-guide#storage-stanza
+}
+
+listener "tcp" {
+  address     = "{{ "/node-ip" | plugin "ctn" }}:8200"
+  tls_disable = "{{ "/vault-config/tls-disable" | plugin "ctn" }}"
+  tls_cert_file = "{{ "/vault-config/tls-cert-file" | plugin "ctn" }}"
+  tls_key_file = "{{ "/vault-config/tls-key-file" | plugin "ctn" }}"
+}
+
+# according to this we can have multiple listeners: https://www.vaultproject.io/docs/configuration/listener/tcp#listening-on-multiple-interfaces
+listener "tcp" {
+  address     = "127.0.0.1:8200"
+  tls_disable = "true"
+}
+
+seal "gcpckms" {
+  project     = "{{ "/project-id" | plugin "ctp" }}"
+  region      = "{{ "/region" | plugin "ctp" }}"
+  crypto_key    = "{{ "/kms-encryption-key" | plugin "ctp" }}"
+  key_ring    = "{{ "/kms-encryption-key-ring" | plugin "ctp" }}"
+}
+
+
+disable_mlock = false  # should be false in production
+
+
+api_addr = "{{ "/vault-config/api-addr" | plugin "ctn"  }}"
+cluster_addr = "{{ "/vault-config/cluster-addr" | plugin "ctn"  }}"
+
+
+/*
+telemetry {
+  statsite_address = "statsite.company.local:8125"
+}
+*/

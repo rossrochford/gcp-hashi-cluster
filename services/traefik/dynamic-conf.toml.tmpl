@@ -1,0 +1,64 @@
+[http]
+
+  [http.middlewares]
+    [http.middlewares.dashboard-auth.basicAuth]
+      removeHeader = true
+      users = ["{{ "/dashboard-auth" | plugin "ctp" }}"]
+
+    [http.middlewares.source-ratelimit.rateLimit]
+      average = 300
+      burst = 300
+      period = 3
+
+    [http.middlewares.dashboards-ip-allowlist.ipWhiteList]
+      sourceRange = [{{ range tree "traefik-dashboards-ip-allowlist/" }}"{{ .Value }}",{{ end }}]
+
+  [http.routers]
+    [http.routers.traefik-dashboard]
+      rule = "Host(`traefik.{{ "/domain-name" | plugin "ctp" }}`)"
+      middlewares = ["dashboards-ip-allowlist", "source-ratelimit", "dashboard-auth"]
+      entryPoints = ["web"]
+      service = "api@internal"
+
+    [http.routers.consul-ui]
+      rule = "Host(`consul.{{ "/domain-name" | plugin "ctp" }}`)"
+      middlewares = ["dashboards-ip-allowlist", "source-ratelimit", "dashboard-auth"]
+      entryPoints = ["web"]
+      service = "consul-ui"
+
+    [http.routers.nomad-ui]
+      rule = "Host(`nomad.{{ "/domain-name" | plugin "ctp" }}`)"
+      middlewares = ["dashboards-ip-allowlist", "source-ratelimit", "dashboard-auth"]
+      entryPoints = ["web"]
+      service = "nomad-ui"
+
+    {{ range tree "traefik-service-routes/" }}
+    [http.routers.{{ .Key }}-router]
+      {{ with $d := .Value | parseJSON }}
+      service = "{{ $d.service_name }}"
+      rule = "{{ $d.routing_rule }}"
+      middlewares = ["source-ratelimit"]
+      entryPoints = ["web"]
+      {{ end }}
+    {{ end }}
+
+  [http.services]
+
+    [http.services.consul-ui]
+      [http.services.consul-ui.loadBalancer]
+        [[http.services.consul-ui.loadBalancer.servers]]
+          url = "http://{{ "hashi-server-1" | plugin "go_discover" }}:8500/"
+
+    [http.services.nomad-ui]
+      [http.services.nomad-ui.loadBalancer]
+        [[http.services.nomad-ui.loadBalancer.servers]]
+          url = "http://{{ "hashi-server-1" | plugin "go_discover" }}:4646/"
+
+  {{ range tree "traefik-service-routes/" }}
+    [http.services.{{ .Key }}]
+      [http.services.{{ .Key }}.loadBalancer]
+        [[http.services.{{ .Key }}.loadBalancer.servers]]
+            {{ with $d := .Value | parseJSON }}
+            url = "http://localhost:{{ $d.local_bind_port }}/"
+            {{ end }}
+  {{ end }}

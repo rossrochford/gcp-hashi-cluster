@@ -1,0 +1,24 @@
+[Unit]
+Description="Consul Agent - client mode"
+Requires=network-online.target
+After=network-online.target
+StartLimitInterval=180
+StartLimitBurst=18
+ConditionDirectoryNotEmpty=/etc/consul.d/
+
+[Service]
+Type=simple
+User=consul
+Group=consul
+Environment=SYSTEMD_LOG_LEVEL=debug
+
+ExecStart=/usr/local/bin/consul agent -config-file=/etc/consul.d/base.hcl -config-file=/etc/consul.d/client.hcl -node={{ node_name }} -bind={{ consul_bind_ip }}
+
+ExecReload=/usr/local/bin/consul reload
+KillMode=process
+Restart=always
+RestartSec=3
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target

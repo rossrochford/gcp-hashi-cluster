@@ -1,0 +1,26 @@
+
+- hosts: hashi_servers:hashi_clients:traefik:vault_servers
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  serial: 2
+  become: yes
+  become_method: sudo
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
+  tasks:
+    - shell: "rm -rf /tmp/ansible-data"
+
+    # note: deleting these KV values means we can't re-render the vault and nomad config templates unless we set them again
+    - shell: "consul kv delete \"$CTN_PREFIX/vault-config/consul-http-token\""
+    - shell: "consul kv delete \"$CTN_PREFIX/nomad-config/consul-token\""
+    - shell: "consul kv delete \"$CTN_PREFIX/nomad-config/vault-token\""
+
+
+# syslog on hashi-server-1 and vault servers may contain sensitive Consul and Vault tokens, overwrite it with a blank string
+- hosts: hashi_server_1:vault_servers
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  become: yes
+  become_method: sudo
+  tasks:
+    - shell: "echo \"\" > /var/log/syslog"

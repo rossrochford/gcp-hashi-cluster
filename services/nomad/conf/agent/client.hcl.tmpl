@@ -1,0 +1,56 @@
+advertise {
+  http = "{{ "/node-ip" | plugin "ctn" }}:4646"
+  rpc  = "{{ "/node-ip" | plugin "ctn" }}:4647"
+  serf = "{{ "/node-ip" | plugin "ctn" }}:4648"
+}
+
+# docs: https://nomadproject.io/docs/configuration/client/
+client {
+
+  enabled = true
+
+  server_join {
+    retry_join = ["provider=gce project_name={{ "/project-id" | plugin "ctp" }} tag_value=nomad-server"]
+    retry_interval = "10s"
+  }
+
+  # node_class    = ""   note: could use this instead of node_type below
+
+  {{ if eq ("/node-type" | plugin "ctn") "traefik" }}
+  host_volume "traefik-config-volume" {
+    path = "/etc/traefik"  # path on host
+    read_only = false  # make it writeable for logs
+  }
+  # note: these are project-wide, based on estimates from a single Traefik node
+  cpu_total_compute = {{ "/nomad-config/traefik/cpu-total-compute" | plugin "ctp" }}
+  memory_total_mb = {{ "/nomad-config/traefik/memory-total-mb" | plugin "ctp" }}
+  {{ end }}
+
+  meta {
+    node_type = "{{ "/node-type" | plugin "ctn" }}"
+  }
+}
+
+
+vault {
+  enabled = true
+  address = "https://{{ "/nomad-config/vault-host" | plugin "ctn" }}:8200"
+  ca_file = "/etc/vault.d/certs/vault_rootCA.pem"
+  cert_file = "/etc/vault.d/certs/certificate.pem"
+  key_file = "/etc/vault.d/certs/key.pem"
+}
+
+/*
+plugin "docker" {
+  config {
+    auth {
+      #helper = "gcr"
+      config = "/root/.docker/config.json"
+    }
+  }
+}
+*/
+
+# consider using this to store global config values in consul kv: https://github.com/breser/git2consul
+# and the opposite, write files based on kv store: https://github.com/cimpress-mcp/fsconsul
+# There is also a built-in mechanism for this: https://learn.hashicorp.com/consul/developer-configuration/consul-template

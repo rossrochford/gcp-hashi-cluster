@@ -1,0 +1,30 @@
+[Unit]
+Description="HashiCorp Vault"
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+User=vault
+Group=vault
+
+#
+Environment=VAULT_ADDR={{ "/vault-config/vault-api-addr" | plugin "ctn" }}
+Environment=VAULT_API_ADDR={{ "/vault-config/vault-api-addr" | plugin "ctn" }}
+
+Environment=CONSUL_HTTP_TOKEN={{ "/vault-config/consul-http-token" | plugin "ctn" }}
+Environment=VAULT_CACERT={{ "/vault-config/ca-cert" | plugin "ctn" }}
+
+ExecStart=/usr/bin/vault server -config=/etc/vault.d/vault_config.hcl
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+KillSignal=SIGINT
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+
+# todo: follow these examples:
+# https://learn.hashicorp.com/vault/operations/ops-vault-ha-consul#vault-server-systemd-unit-file
+# https://learn.hashicorp.com/vault/day-one/ops-deployment-guide#step-3-configure-systemd

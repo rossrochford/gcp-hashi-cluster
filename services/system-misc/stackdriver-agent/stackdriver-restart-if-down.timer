@@ -1,0 +1,9 @@
+[Unit]
+Description=stackdriver-restart-if-down timer
+
+[Timer]
+OnUnitActiveSec=120
+OnBootSec=120s
+
+[Install]
+WantedBy=timers.target

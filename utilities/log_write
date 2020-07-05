@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# This isn't efficient to call this repeatedly but it ensures that important
+# errors show up in the Google Logs Viewer console. The current sackdriver config isn't
+# 100% reliable and often fails to pick up the log level, so use this for critical errors.
+python3 /scripts/utilities/py_utilities/stackdriver_write_to_log.py "$1" "$2"

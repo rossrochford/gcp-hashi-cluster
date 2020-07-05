@@ -1,0 +1,64 @@
+---
+
+- hosts: hashi_servers
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  any_errors_fatal: true
+  become: yes
+  become_method: sudo
+  vars:
+    current_index: "{{ ansible_play_batch.index(inventory_hostname) }}"
+    current_ip: "{{ ansible_default_ipv4.address }}"
+  tasks:
+    - shell: "mkdir -p /etc/consul.d/tls-certs/"
+
+    - copy:
+        src: "/etc/consul.d/tls-certs-new/consul-agent-ca.pem"
+        dest: "/etc/consul.d/tls-certs/consul-agent-ca.pem"
+
+    - copy:
+        src: "/etc/consul.d/tls-certs-new/dc1-server-consul-{{ current_ip }}-key.pem"
+        dest: "/etc/consul.d/tls-certs/dc1-server-consul-key.pem"
+
+    - copy:
+        src: "/etc/consul.d/tls-certs-new/dc1-server-consul-{{ current_ip }}.pem"
+        dest: "/etc/consul.d/tls-certs/dc1-server-consul.pem"
+
+    - shell: "chown --recursive consul:consul /etc/consul.d/tls-certs; chmod 640 /etc/consul.d/tls-certs/*"
+
+
+- hosts: hashi_clients:traefik:vault_servers
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  any_errors_fatal: true
+  become: yes
+  become_method: sudo
+  tasks:
+    - shell: "mkdir -p /etc/consul.d/tls-certs/"
+
+    - copy:
+        src: "/etc/consul.d/tls-certs-new/consul-agent-ca.pem"
+        dest: "/etc/consul.d/tls-certs/consul-agent-ca.pem"
+
+    - copy:
+        src: "/etc/consul.d/tls-certs-new/dc1-client-consul-0-key.pem"
+        dest: "/etc/consul.d/tls-certs/dc1-client-consul-key.pem"
+
+    - copy:
+        src: "/etc/consul.d/tls-certs-new/dc1-client-consul-0.pem"
+        dest: "/etc/consul.d/tls-certs/dc1-client-consul.pem"
+
+    - shell: "chown --recursive consul:consul /etc/consul.d/tls-certs; chmod 640 /etc/consul.d/tls-certs/*"
+
+
+# retain the CA private key only on one machine, it's necessary for creating future certs
+# note: assumes certs were created on hashi-server-1
+- hosts: hashi_server_1
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  become: yes
+  become_method: sudo
+  tasks:
+    - copy:
+        src: "/etc/consul.d/tls-certs-new/consul-agent-ca-key.pem"
+        dest: "/etc/consul.d/tls-certs/consul-agent-ca-key.pem"
+    - file:
+        state: absent
+        path: "/etc/consul.d/tls-certs-new"

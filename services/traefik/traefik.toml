@@ -1,0 +1,43 @@
+
+# NOTE: it would be more idiomatic to use the "template" stanza in the Nomad job to render this file
+
+[log]
+  level = "INFO"
+  filePath = "/etc/traefik/traefik.log"
+  format = "json"   # or "common"
+
+[accessLog]
+  filePath = "/etc/traefik/access.log"
+  bufferingSize = 40  # buffer of 40 lines
+  format = "json"
+
+
+# removing for now until port issue is resolved
+#[metrics]
+#  [metrics.statsD]
+#    address = "localhost:8125"
+#    addServicesLabels = true
+
+
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+
+    [entryPoints.web.forwardedHeaders]
+      trustedIPs = ["35.191.0.0/16", "130.211.0.0/22"]  # load-balancer ip addresses
+
+
+[ping]
+entryPoint = "web"
+
+
+[api]
+  dashboard = true
+  debug = true
+  insecure = true
+
+
+[providers]
+  [providers.file]
+    watch = true
+    filename = "/etc/traefik/dynamic-conf.toml"

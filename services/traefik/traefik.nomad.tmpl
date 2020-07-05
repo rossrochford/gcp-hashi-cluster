@@ -1,0 +1,64 @@
+# guide on how to configure canary updates: https://www.hashicorp.com/blog/building-resilient-infrastructure-with-nomad-job-lifecycle/
+# another example: https://github.com/liemle3893/nomad-getting-started/blob/master/jobs/ingress/ingress.nomadtpl
+
+job "traefik" {
+  datacenters = ["dc1"]
+  type = "service"
+  
+  group "loadbalancers" {
+    count = 1
+
+    task "traefik" {
+      driver = "docker"
+
+      config {
+        image = "registry.hub.docker.com/library/traefik:v2.2.1"
+        network_mode = "host"
+
+        auth {
+          server_address = "hub.docker.com"
+        }
+
+        port_map {
+          http = 80
+          ui = 8080
+          api = 8081
+        }
+      }
+
+      resources {
+        cpu = {{ "/nomad-config/traefik/cpu-total-compute" | plugin "ctp" }}
+        memory = {{ "/nomad-config/traefik/memory-total-mb" | plugin "ctp" }}
+
+        network {
+          # note: static ports aren't recommended generally but are appropriate here
+          port "http" { static = 80 }
+          port "ui" { static = 8080 }
+          port "api" { static = 8081 }
+        }
+      }
+
+      service {
+        name = "traefik"
+        check {
+          type = "http"
+          port = "http"
+          path = "/ping"
+          interval = "6s"
+          timeout = "2s"
+        }
+      }
+
+      volume_mount {
+        volume      = "traefik-config"
+        destination = "/etc/traefik"
+      }
+    }
+
+    volume "traefik-config" {
+      type = "host"
+      source = "traefik-config-volume"
+      read_only = false
+    }
+  }
+}

@@ -1,0 +1,8 @@
+---
+
+- hosts: hashi_clients
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  become: yes
+  become_method: sudo
+  tasks:
+    - shell: "/scripts/utilities/docker/pull-docker-images.sh"

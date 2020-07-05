@@ -1,0 +1,69 @@
+---
+# Setup Nomad
+# -----------------------------------------
+
+- hosts: hashi_clients:vault_servers:traefik
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  serial: 3
+  any_errors_fatal: true
+  become: yes
+  become_method: sudo
+  tasks:
+    - shell: "/scripts/utilities/docker/pull-docker-images.sh"
+    # not sure if pulling envoy images is necessary anymore...
+    - shell: "docker pull envoyproxy/envoy:v1.11.2@sha256:a7769160c9c1a55bb8d07a3b71ce5d64f72b1f665f10d81aa1581bc3cf850d09"
+    - shell: "docker pull envoyproxy/envoy:v1.14.2"
+
+
+- hosts: hashi_servers
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  any_errors_fatal: true
+  become: yes
+  become_method: sudo
+
+  vars:
+    hashi_server_index: "{{ groups.hashi_servers.index(inventory_hostname) }}"
+    nomad_vault_token: "{{ (lookup('env','NOMAD_VAULT_TOKENS') | from_json)['nomad_vault_tokens'][(hashi_server_index | int)] }}"
+
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+    vault_server_1_ip: "{{ lookup('env','VAULT_IP_ADDR_1') }}"
+
+  tasks:
+    - shell: "/scripts/services/nomad/init/setup_nomad_server.sh {{ consul_bootstrap_token }} {{ vault_server_1_ip }} {{ nomad_vault_token }}"
+    - shell: "systemctl enable nomad-server.service; systemctl start nomad-server.service"
+
+
+- hosts: traefik
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  any_errors_fatal: true
+  serial: 1
+  become: yes
+  become_method: sudo
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+    vault_server_1_ip: "{{ lookup('env','VAULT_IP_ADDR_1') }}"
+    current_index: "{{ ansible_play_batch.index(inventory_hostname) }}"
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
+  tasks:
+    # estimate available CPU and memory for traefik Nomad clients, based on the first traefik node
+    - shell: "/scripts/services/traefik/set_nomad_resources.sh"
+      when: current_index == "0"
+
+    - shell: "/scripts/services/nomad/init/setup_nomad_client.sh {{ vault_server_1_ip }}"
+    - shell: "systemctl enable nomad-client.service; systemctl start nomad-client.service"
+
+
+- hosts: hashi_clients
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  any_errors_fatal: true
+  become: yes
+  become_method: sudo
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+    vault_server_1_ip: "{{ lookup('env','VAULT_IP_ADDR_1') }}"
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
+  tasks:
+    - shell: "/scripts/services/nomad/init/setup_nomad_client.sh {{ vault_server_1_ip }}"
+    - shell: "systemctl enable nomad-client.service; systemctl start nomad-client.service"

@@ -1,0 +1,48 @@
+{
+  "organization_id": "",
+  "organization_admin_user_email": "",
+  "billing_account_id": "",
+  "domain_name": "",
+  "region": "",
+
+  "dashboards_username": "admin",
+  "dashboards_password": "myPassword",
+
+
+  "num_hashi_servers": 3,
+  "hashi_server_size": "n1-standard-1",
+
+  "num_hashi_clients": 1,
+  "hashi_client_size": "n1-standard-1",
+
+  "num_vault_servers": 1,
+  "vault_server_size": "n1-standard-1",
+
+  "num_traefik_servers": 1,
+  "traefik_server_size": "n1-standard-1",
+
+
+  "vpc_host_project_id_prefix": "vpc-host-project",
+  "shared_vpc_network_name": "shared-vpc-network",
+  "terraform_vpc_host_project_service_account_name": "terraform-sa",
+  "terraform_vpc_host_project_credentials_filename": "terraform-service-account-credentials_vpc-host-project.json",
+
+
+  "cluster_project_id_prefix": "hashi-cluster",
+  "cluster_subnet_name": "hashi-cluster-subnet",
+  "cluster_subnet_ip_range": "10.132.0.0/20",
+
+  "terraform_cluster_project_service_account_name": "terraform-sa",
+  "terraform_cluster_project_credentials_filename": "terraform-service-account-credentials_cluster-service-project.json",
+  "terraform_cluster_project_ssh_key_name": "terraform-ssh-key_cluster-service-project",
+
+  "vm_cluster_project_service_account_name": "instance-sa",
+  "vm_cluster_project_credentials_filename": "instance-service-account-credentials_cluster-service-project.json",
+  "vm_cluster_project_ssh_key_name": "instance-ssh-key_cluster-service-project",
+
+
+  "lb_public_ip_name": "hashi-cluster-lb-ip",
+  "kms_prefix": "hashi-cluster-kms",
+  "base_image_name_prefix": "hashi-cluster-base",
+  "project_bucket_prefix": "project-bucket-hashi-cluster"
+}

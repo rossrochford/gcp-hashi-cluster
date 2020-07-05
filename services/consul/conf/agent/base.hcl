@@ -1,0 +1,93 @@
+datacenter = "dc1"
+primary_datacenter = "dc1"
+
+data_dir = "/opt/consul"
+
+log_file = "/opt/consul/logs/"
+log_level = "DEBUG"
+log_json = true
+enable_syslog = false
+
+retry_join = ["provider=gce project_name={{ cluster_service_project_id }} tag_value=consul-server"]
+retry_interval = "3s"
+
+
+acl {
+  enabled = true
+  default_policy = "deny"
+  down_policy = "deny"
+  enable_token_persistence = true
+  # the comment below gets replaced on client nodes
+  #__AGENT_TOKEN_STANZA__
+}
+
+
+encrypt = "__GOSSIP_ENCRYPTION_KEY__"
+
+verify_server_hostname = true
+verify_incoming = true  # set this false on clients when using auto_tls (we're not)
+verify_outgoing = true
+
+
+connect {
+  enabled = true
+}
+
+ports {
+  https = 8501
+  grpc = 8502
+}
+
+/*
+{% if node_type == "vault" %}
+client_addr = "127.0.0.1"
+{% else %}
+client_addr = "0.0.0.0"
+addresses {
+  http = "0.0.0.0"  # consul_address_ip
+  grpc = "0.0.0.0"
+}
+{% endif %}
+*/
+
+client_addr = "0.0.0.0"
+addresses {
+  http = "0.0.0.0"
+  https = "0.0.0.0"
+  grpc = "0.0.0.0"
+}
+
+
+telemetry {
+  statsd_address = "127.0.0.1:8125"
+}
+
+enable_central_service_config = true  # must be true for config_entries to be discovered
+
+# https://github.com/hashicorp/consul/blob/master/test/integration/connect/envoy/case-cfg-resolver-defaultsubset/config_entries.hcl
+config_entries {
+  # note: it looks like "consul connect envoy" can be used to generate this config (https://www.consul.io/docs/commands/connect/envoy.html)
+  bootstrap {
+    kind = "proxy-defaults"
+    name = "global"
+    config {
+      # for a list of envoy bootstrap config fields see: https://www.consul.io/docs/connect/proxies/envoy.html#bootstrap-configuration
+      # envoy_dogstatsd_url = "udp://127.0.0.1:9125"
+      envoy_statsd_url = "udp://127.0.0.1:9125"
+      # for monitoring overview see: https://www.hashicorp.com/blog/layer-7-observability-with-consul-service-mesh/  it even has observability for gRPC-based services! (# the docs seem to recommend instead of statsd using Prometheus or Grafana via DogStatsD. I like the look of Grafana!)
+      # You shouldn't need to, but Envoy's stats behavior can be configured as outlined here: https://www.consul.io/docs/connect/proxies/envoy.html#advanced-bootstrap-options
+    }
+  }
+  bootstrap {
+    kind = "service-defaults"  # see list of entry kinds here: https://www.consul.io/docs/agent/config_entries.html
+    name = "count-dash"
+    protocol = "http"   # setting the service's protocol globally seems to be recommended, it also means we don't have to set it in the proxy service definition or upstreams. I think not doing either causes it to fall back to L4 monitoring for the service.
+  }
+  bootstrap {
+    kind = "service-defaults"
+    name = "count-api"
+    protocol = "http"
+  }
+}
+
+# read about Consul auto-pilot for better resilience: https://learn.hashicorp.com/consul/day-2-operations/autopilot

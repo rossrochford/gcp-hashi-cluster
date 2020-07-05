@@ -1,0 +1,50 @@
+---
+
+# doing this in a separate play for convenience, so the CONSUL_LOCK_SESSION_ID
+# environment variable gets picked up on subsequent plays
+- hosts: hashi_servers:hashi_clients:traefik:vault_servers
+  any_errors_fatal: true
+  serial: 1
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  become: yes
+  become_method: sudo
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
+  tasks:
+    #- shell: "python3 /scripts/utilities/py_utilities/consul_wait_for.py 'node-healthy' 40"
+    - name: "creating lock sessions for Consul nodes"
+      shell: "python3 /scripts/utilities/py_utilities/consul_kv.py create-lock-session"
+
+
+- hosts: hashi_server_1
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  any_errors_fatal: true
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+    project_bucket: "{{ lookup('env','PROJECT_BUCKET') }}"
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
+  tasks:
+    - name: "initializing project metadata on Consul KV data-store"
+      shell: "source /etc/environment; python3 /scripts/utilities/py_utilities/consul_kv.py initialize-project-metadata"
+      args:
+        executable: /bin/bash
+    - name: "creating cloud-store bucket for project"
+      shell: "python3 /scripts/utilities/py_utilities/gcloud_storage.py create-bucket {{ project_bucket }}"
+
+
+- hosts: hashi_servers:hashi_clients:traefik:vault_servers
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  serial: 2
+  any_errors_fatal: true
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
+  tasks:
+    - name: "registering nodes on Consul KV data-store"
+      shell: "source /etc/environment; python3 /scripts/utilities/py_utilities/consul_kv.py register-node"
+      args:
+        executable: /bin/bash

@@ -1,0 +1,93 @@
+---
+
+- hosts: vault_servers
+  any_errors_fatal: true
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  become: yes
+  become_method: sudo
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+  environment:
+    CONSUL_HTTP_ADDR: "127.0.0.1:8500"
+    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
+  tasks:
+    - name: "set mlock capability for vault"
+      shell: "setcap cap_ipc_lock=+ep /usr/bin/vault"
+    #- name: "waiting for consul node health"
+    #  shell: "python3 /scripts/utilities/py_utilities/consul_wait_for.py 'node-healthy' 90; sleep 2"
+    - name: "create consul token for Vault"
+      shell: "/scripts/services/vault/init/vault_consul_token_init.sh {{ consul_bootstrap_token }}"
+
+
+- hosts: vault_servers
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  become: yes
+  become_method: sudo
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+  environment:
+    CONSUL_HTTP_ADDR: "http://127.0.0.1:8500"
+    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
+  tasks:
+    - shell: "/scripts/services/vault/init/render_vault_config.sh initial"
+    - name: "start Vault"
+      shell: "systemctl enable vault.service; systemctl start vault.service"
+
+
+- hosts: vault_server_1
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  any_errors_fatal: true
+  environment:
+    VAULT_ADDR: "http://127.0.0.1:8200"
+  tasks:
+    - name: "initialise Vault policies/roles and create Vault tokens for Nomad server agents"
+      shell: "sleep 1; /scripts/services/vault/init/vault_init.sh"
+      register: "vault_init_result"
+    - set_fact:
+        vault_root_token: "{{ vault_init_result.stdout_lines[-2] }}"
+    - set_fact:
+        nomad_vault_tokens_json: "{{ vault_init_result.stdout_lines[-1] }}"
+    - debug:
+        msg: "vault_root_token: {{ vault_root_token }}"
+
+
+- hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - copy:
+        content: "{{ hostvars[item]['nomad_vault_tokens_json'] }}"
+        dest: "/tmp/ansible-data/nomad-vault-tokens.json"
+      with_items: "{{ groups['vault_server_1'] }}"
+    - copy:
+        content: "{{ hostvars[item]['vault_root_token'] }}"
+        dest: "/tmp/ansible-data/vault-root-token.txt"
+      with_items: "{{ groups['vault_server_1'] }}"
+
+
+
+- hosts: vault_servers:hashi_servers:traefik:hashi_clients
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  any_errors_fatal: true
+  become: yes
+  become_method: sudo
+  tasks:
+    - name: "Placing Vault TLS certs"
+      shell: "/scripts/services/vault/init/place_tls_certs.sh"
+    - file:
+        state: absent
+        path: "/tmp/ansible-data/vault-tls-certs.zip"
+
+
+- hosts: vault_servers
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  any_errors_fatal: true
+  become: yes
+  become_method: sudo
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+  environment:
+    CONSUL_HTTP_ADDR: "http://127.0.0.1:8500"
+    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
+  tasks:
+    - shell: "/scripts/services/vault/init/render_vault_config.sh tls-certs-ready"
+    - shell: "systemctl restart vault.service"

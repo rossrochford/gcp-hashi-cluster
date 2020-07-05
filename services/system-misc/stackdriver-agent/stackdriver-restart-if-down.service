@@ -1,0 +1,7 @@
+[Unit]
+Description=stackdriver-restart-if-down service
+
+[Service]
+User=root
+Type=oneshot
+ExecStart=/scripts/services/system-misc/stackdriver-agent/restart_stackdriver_if_down.sh

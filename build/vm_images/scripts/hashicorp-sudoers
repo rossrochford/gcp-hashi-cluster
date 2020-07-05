@@ -1,0 +1,6 @@
+Defaults   env_keep += "VAULT_ADDR"
+Defaults   env_keep += "CONSUL_HTTP_ADDR"
+Defaults   env_keep += "CONSUL_HTTP_TOKEN"
+Defaults   env_keep += "NOMAD_ADDR"
+Defaults   env_keep += "CTN_PREFIX"
+Defaults   env_keep += "CTP_PREFIX"

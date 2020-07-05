@@ -1,0 +1,21 @@
+[Unit]
+Description="Traefik Sidecar Proxy"
+Requires=network-online.target
+After=network-online.target
+StartLimitInterval=180
+StartLimitBurst=18
+
+[Service]
+Type=simple
+User=consul
+Group=consul
+Environment=SYSTEMD_LOG_LEVEL=debug
+Environment=CONSUL_HTTP_TOKEN=none
+ExecStart=/usr/local/bin/consul connect proxy -sidecar-for traefik -http-addr {{ "/node-ip" | plugin "ctn" }}:8500
+KillMode=process
+Restart=always
+RestartSec=4
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,31 @@
+---
+
+- hosts: traefik
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  become: yes
+  become_method: sudo
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+    current_ip: "{{ ansible_default_ipv4.address }}"
+    current_index: "{{ ansible_play_batch.index(inventory_hostname) }}"
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
+  tasks:
+    - shell: "cp /scripts/services/traefik/traefik.toml /etc/traefik/traefik.toml"
+
+    - shell: "python3 /scripts/utilities/py_utilities/consul_kv.py store-traefik-service-routes /scripts/operations/traefik/traefik-service-routes.json; sleep 1"
+      when: current_index == "0"
+
+    - shell: "/scripts/services/traefik/render_traefik_sidecar_config.sh"
+    - shell: "/scripts/services/traefik/render_traefik_routes_config.sh"
+
+    - shell: "consul-template -once -template '/scripts/services/traefik/traefik.nomad.tmpl:/etc/traefik/traefik.nomad'"
+      when: current_index == "0"
+    - shell: "nomad job run /etc/traefik/traefik.nomad; sleep 5"
+      when: current_index == "0"
+    - shell: "consul services register /etc/traefik/traefik-service.json"
+      when: current_index == "0"
+    - shell: "consul intention create -allow traefik '*'"
+      when: current_index == "0"
+
+    - shell: "systemctl enable traefik-sidecar-proxy.service; systemctl start traefik-sidecar-proxy.service"

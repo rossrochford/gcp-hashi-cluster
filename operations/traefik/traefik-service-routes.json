@@ -1,0 +1,9 @@
+{
+  "dashboards_ip_allowlist": ["0.0.0.0/0"],
+  "routes": [
+    {
+      "service_name": "count-webserver",
+      "routing_rule": "PathPrefix(`/counter`)"
+    }
+  ]
+}

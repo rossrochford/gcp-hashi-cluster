@@ -1,0 +1,43 @@
+---
+
+- hosts: traefik
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  serial: 1
+  become: yes
+  become_method: sudo
+  tasks:
+    - shell: "/scripts/services/traefik/render_traefik_sidecar_config.sh"
+    - shell: "/scripts/services/traefik/render_traefik_routes_config.sh"
+
+    - shell: "consul services register /etc/traefik/traefik-service.json"
+    # does sidecar proxy need restarting? or a SIGHUP?
+
+
+# old stuff:
+# --------------------------
+
+#  tasks:
+    # it is assumed that the latest version of this file has been uploaded on the node running this playbook, see: operations/traefik/refresh-service-routes.sh
+#    - copy:
+#        src: "/scripts/operations/traefik/traefik-service-routes.json"
+#        dest: "/scripts/operations/traefik/traefik-service-routes.json"
+
+#    - shell: "python3 /scripts/utilities/py_utilities/consul_kv.py store-traefik-service-routes"
+#      when: current_index == 0
+
+
+
+# copy new routes file to Traefik VMs
+# run template rendering scripts(s)
+# run 'consul reload' (or SIGHUP, see: https://learn.hashicorp.com/consul/getting-started/services#update-services)
+
+
+#python3 /scripts/utilities/py_utilities/consul_kv.py store-traefik-service-routes
+
+#/scripts/services/traefik/render_traefik_routes_config.sh
+
+#consul reload
+
+
+# todo: store agent token in /etc/environment on Traefik nodes  (need to confirm whether this token is sufficient to run 'store-traefik-service-routes')
+# and a read-only token in /etc/environment on all other nodes?

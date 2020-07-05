@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# consul-template plugins need to handle empty input gracefully: https://github.com/hashicorp/consul-template#plugins
+
+if [ $# -eq 0 ]
+  then
+    # no argument
+    echo ""
+    exit 0
+fi
+
+if [ -z "$1" ]
+  then
+    # empty argument
+    echo ""
+    exit 0
+fi
+
+/scripts/utilities/kv/consul_kv_prefix.sh $CTP_PREFIX $1
