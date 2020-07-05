@@ -61,6 +61,4 @@ Contribute
 License
 -------
 
-The project is licensed under the MIT license.
-
-
+The project is licensed under the 3-clause BSD license.
