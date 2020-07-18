@@ -1,12 +1,12 @@
 {
-  "organization_id": "",
-  "organization_admin_user_email": "",
-  "billing_account_id": "",
-  "domain_name": "",
-  "region": "",
+  "organization_id": "712851330427",
+  "organization_admin_user_email": "ross@eventpouch.com",
+  "billing_account_id": "01F121-55089B-02E5C6",
+  "domain_name": "eventpouch.com",
+  "region": "europe-west3",
 
   "dashboards_username": "admin",
-  "dashboards_password": "myPassword",
+  "dashboards_password": "browserchunk321",
 
 
   "num_hashi_servers": 3,
@@ -42,6 +42,7 @@
 
 
   "lb_public_ip_name": "hashi-cluster-lb-ip",
+  "http_timeout_sec": 30,
   "kms_prefix": "hashi-cluster-kms",
   "base_image_name_prefix": "hashi-cluster-base",
   "project_bucket_prefix": "project-bucket-hashi-cluster"

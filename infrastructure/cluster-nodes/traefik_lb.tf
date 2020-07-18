@@ -1,6 +1,8 @@
 
 resource "google_compute_managed_ssl_certificate" "traefik-lb-ssl-cert" {
   # note: this module is in beta, consider using google_compute_ssl_certificate instead
+  count = var.lb_disable_tls ? 0 : 1
+
   provider = google-beta
 
   name = "traefik-lb-ssl-cert"
@@ -13,6 +15,7 @@ resource "google_compute_managed_ssl_certificate" "traefik-lb-ssl-cert" {
 }
 
 resource "google_compute_global_forwarding_rule" "https" {
+  count = var.lb_disable_tls ? 0 : 1
   project    = var.cluster_service_project_id
   name       = "traefik-lb-global-forwarding-rule"
   target     = google_compute_target_https_proxy.traefik-lb-https-proxy.self_link
@@ -21,15 +24,46 @@ resource "google_compute_global_forwarding_rule" "https" {
   load_balancing_scheme = "EXTERNAL"
 }
 
+resource "google_compute_ssl_policy" "traefik-lb-ssl-policy" {
+  count = var.lb_disable_tls ? 0 : 1
+  name    = "traefik-lb-ssl-policy"
+  profile = "COMPATIBLE"
+  # other possible profiles: https://cloud.google.com/load-balancing/docs/ssl-policies-concepts#defining_an_ssl_policy
+}
+
 resource "google_compute_target_https_proxy" "traefik-lb-https-proxy" {
+  count = var.lb_disable_tls ? 0 : 1
   project = var.cluster_service_project_id
   name    = "traefik-lb-https-proxy"
   url_map = google_compute_url_map.traefik-lb-url-map.self_link
 
    ssl_certificates = [google_compute_managed_ssl_certificate.traefik-lb-ssl-cert.id]
-   # ssl_policy       = var.ssl_policy
+   ssl_policy       = google_compute_ssl_policy.traefik-lb-ssl-policy.self_link
    # quic_override    = var.quic ? "ENABLE" : null
 }
+
+
+# ------------------------------------
+# these are created if TLS is disabled on the load-balancer
+resource "google_compute_global_forwarding_rule" "http" {
+  count = var.lb_disable_tls ? 1 : 0
+
+  project    = var.cluster_service_project_id
+  name       = "traefik-lb-global-forwarding-rule"
+  target     = google_compute_target_http_proxy.traefik-lb-http-proxy.self_link
+  port_range = "80"
+  ip_address = var.load_balancer_public_ip_address
+  load_balancing_scheme = "EXTERNAL"
+}
+
+resource "google_compute_target_http_proxy" "traefik-lb-http-proxy" {
+  count = var.lb_disable_tls ? 1 : 0
+
+  project = var.cluster_service_project_id
+  name    = "traefik-lb-http-proxy"
+  url_map = google_compute_url_map.traefik-lb-url-map.self_link
+}
+# ------------------------------------
 
 
 resource "google_compute_url_map" "traefik-lb-url-map" {
@@ -58,7 +92,7 @@ resource "google_compute_security_policy" "traefik-security-policy" {
 
     rule {
         action   = "allow"
-        priority = "1008"
+        priority = "1005"
         match {
             expr {
               expression = "(request.method == \"PUT\") && (request.path.matches('^/v1/kv/.+'))"
@@ -69,13 +103,24 @@ resource "google_compute_security_policy" "traefik-security-policy" {
 
     rule {
         action   = "allow"
-        priority = "1009"
+        priority = "1006"
         match {
             expr {
               expression = "(request.method == \"POST\" || request.method == \"PUT\") && (request.path.matches('^/v1/connect/intentions.*'))"
             }
         }
         description = "Allow Consul UI to create and list intentions"
+    }
+
+    rule {
+        action   = "allow"
+        priority = "1007"
+        match {
+            expr {
+              expression = "request.method == \"POST\" && request.path.matches('^/v1/node/.+/drain')"
+            }
+        }
+        description = "Allow Nomad UI to drain nodes"
     }
 
     rule {
@@ -133,9 +178,9 @@ resource "google_compute_backend_service" "traefik-backend-service" {
 
   port_name                       = "http"
   protocol                        = "HTTP"
-  timeout_sec                     = 5
+  timeout_sec                     = var.http_timeout_sec
   description                     = ""
-  connection_draining_timeout_sec = 5
+  connection_draining_timeout_sec = 10
   enable_cdn                      = false
   security_policy                 = google_compute_security_policy.traefik-security-policy.self_link
   health_checks                   = [google_compute_health_check.traefik-health-check.self_link]

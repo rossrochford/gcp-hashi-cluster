@@ -26,3 +26,7 @@ key_prefix "traefik-dashboards-ip-allowlist/" {
 key_prefix "" {
    policy = "read"
 }
+
+event "traefik-routes-updated" {
+  policy = "write"
+}

@@ -69,9 +69,17 @@ if [[ -z $ORGANIZATION_EXISTS ]]; then
   echo "organization $ORGANIZATION_ID not found"; exit 1
 fi
 
+# validate billing account ID
+BILLING_ACCOUNT_EXISTS=$(gcloud beta billing accounts list --filter="ACCOUNT_ID:$BILLING_ACCOUNT" --format="value(ACCOUNT_ID)")
+if [[ -z $BILLING_ACCOUNT_EXISTS ]]; then
+  echo "billing account '$BILLING_ACCOUNT' not found"; exit 1
+fi
+
 # validate region
 REGION_VALID=$(cat "./conf/gcp-locations.json" | jq ".regions | contains([\"$REGION\"])")
-if [[ $REGION_VALID != "true" ]]; then echo "error: invalid region: $REGION"; exit 1; fi
+if [[ $REGION_VALID != "true" ]]; then
+  echo "error: invalid region: $REGION"; exit 1
+fi
 
 
 # validate domain does not start with "http" or "www."
@@ -103,7 +111,6 @@ echo ""
 echo "uuid: $UUID"
 echo ""
 
-
 PREFIX=$(echo $DEFAULTS | jq -r ".vpc_host_project_id_prefix")
 VPC_HOST_PROJECT_ID="$PREFIX-$UUID"
 
@@ -131,6 +138,7 @@ CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE="$REPO_DIRECTORY/keys/$(echo $DEFAULT
 CLUSTER_PROJECT_VM_SA_NAME=$(echo $DEFAULTS | jq -r ".vm_cluster_project_service_account_name")
 CLUSTER_PROJECT_VM_SA_EMAIL="${CLUSTER_PROJECT_VM_SA_NAME}@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com"
 
+HTTP_TIMEOUT_SEC=$(echo $DEFAULTS | jq -r ".http_timeout_sec")
 
 PREFIX=$(echo $DEFAULTS | jq -r ".base_image_name_prefix")
 BASE_IMAGE_NAME="$PREFIX-$UUID"
@@ -155,6 +163,9 @@ mkdir -p "$REPO_DIRECTORY/keys"
 
 ./scripts/2-create-projects.sh $VPC_HOST_PROJECT_ID $CLUSTER_PROJECT_ID $CLUSTER_PROJECT_TF_SA_EMAIL
 
+if [[ $? != 0 ]]; then
+  echo "error creating projects"; exit 1
+fi
 
 # create service account for vpc host project
 ./scripts/3-create-terraform-service-account_vpc-host-project.sh $VPC_HOST_PROJECT_ID $VPC_HOST_PROJECT_TF_SA_EMAIL
@@ -211,13 +222,15 @@ JSON_STRING2=$( jq -n \
   --argjson h "$ZONES_ALLOWED" \
   --arg i $BASE_IMAGE_NAME \
   --arg j $PROJECT_INFO_FILEPATH \
+  --argjson s $HTTP_TIMEOUT_SEC \
   --arg t $LB_PUBLIC_IP_ADDRESS \
   --arg u $CONTAINER_REGISTRY_HOSTNAME \
   --arg aa $PROJECT_BUCKET \
   --arg v $KMS_KEY \
   --arg w $KMS_KEYRING \
-  '{ uuid: $g, zones_allowed: $h, base_image_name: $i, project_info_filepath: $j, load_balancer_public_ip_address: $t,
-   container_registry_hostname: $u, project_bucket: $aa, kms_encryption_key: $v, kms_encryption_key_ring: $w }' )
+  '{ uuid: $g, zones_allowed: $h, base_image_name: $i, project_info_filepath: $j, http_timeout_sec: $s,
+     load_balancer_public_ip_address: $t, container_registry_hostname: $u, project_bucket: $aa, kms_encryption_key: $v,
+     kms_encryption_key_ring: $w }' )
 
 
 JSON_STRING3=$(jq -n \
@@ -269,3 +282,7 @@ with open('./conf/project-info.json', 'w') as file:
     string = json.dumps(data, indent=4, separators=(',', ': '))
     file.write(string)
 END
+
+
+# validate quotas
+./scripts/7-validate-quotas.sh $VPC_HOST_PROJECT_ID $CLUSTER_PROJECT_ID

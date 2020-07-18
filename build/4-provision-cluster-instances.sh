@@ -13,6 +13,10 @@ VARS_FILEPATH="$REPO_DIRECTORY/build/conf/project-info.json"
 
 cd "$REPO_DIRECTORY/infrastructure/cluster-nodes"
 
+# delete any previous Terraform state
+rm -rf ".terraform"
+rm -f "terraform.tfstate"
+rm -f "terraform.tfstate.backup"
 
 terraform init
 

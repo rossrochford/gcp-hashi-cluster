@@ -10,8 +10,10 @@ PROJECT_INFO=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.inter
 
 cd /
 git clone https://github.com/rossrochford/gcp-hashi-cluster.git
+
 mv /gcp-hashi-cluster /scripts
 cd /scripts
+git checkout dev  # todo: add branch name to project-info
 
 
 # project-wide and node-wide prefixes for storing metadata in Consul
@@ -29,10 +31,6 @@ echo "GCP_INSTANCE_ID=$GCP_INSTANCE_ID" >> /etc/environment
 
 echo "creating metadata"
 python3 utilities/py_utilities/create_metadata.py
-
-
-# render consul config files
-python3 utilities/py_utilities/render_config_templates.py "consul"
 
 
 # render ansible config and create symlinks

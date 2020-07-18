@@ -21,10 +21,16 @@ client {
     path = "/etc/traefik"  # path on host
     read_only = false  # make it writeable for logs
   }
+
   # note: these are project-wide, based on estimates from a single Traefik node
   cpu_total_compute = {{ "/nomad-config/traefik/cpu-total-compute" | plugin "ctp" }}
   memory_total_mb = {{ "/nomad-config/traefik/memory-total-mb" | plugin "ctp" }}
   {{ end }}
+
+  host_volume "utility-scripts-volume" {
+    path = "/scripts/utilities"
+    read_only = true
+  }
 
   meta {
     node_type = "{{ "/node-type" | plugin "ctn" }}"

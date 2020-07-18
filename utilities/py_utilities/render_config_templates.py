@@ -1,28 +1,32 @@
 import json
-import os
 import sys
 
 import jinja2
 
-from py_utilities.consul_kv import get_traefik_service_routes
-
-SCRIPTS_DIR = '/scripts/'
+from py_utilities.consul_kv import (
+    get_traefik_sidecar_upstreams, get_traefik_service_routes,
+    get_traefik_dashboards_ip_allowlist, get_cli
+)
 
 
 FILES = {
     'consul': [
-        'services/consul/conf/agent/base.hcl',
-        'services/consul/conf/agent/client.hcl',
-        'services/consul/conf/agent/server.hcl',
-        'services/consul/systemd/consul-server.service',
-        'services/consul/systemd/consul-client.service',
-        'services/consul/acl/policies/consul_agent_policy.hcl',
-        'services/consul/acl/policies/shell_policies/hashi_server_1_shell_policy.hcl',
-        'services/consul/acl/policies/shell_policies/traefik_shell_policy.hcl'
+        ('/scripts/services/consul/conf/agent/base.hcl.tmpl', '/etc/consul.d/base.hcl'),
+        ('/scripts/services/consul/conf/agent/client.hcl.tmpl', '/etc/consul.d/client.hcl'),
+        ('/scripts/services/consul/conf/agent/server.hcl.tmpl', '/etc/consul.d/server.hcl'),
+        ('/scripts/services/consul/systemd/consul-server.service.tmpl', '/etc/systemd/system/consul-server.service'),
+        ('/scripts/services/consul/systemd/consul-client.service.tmpl', '/etc/systemd/system/consul-client.service'),
+        '/scripts/services/consul/acl/policies/consul_agent_policy.hcl',
+        '/scripts/services/consul/acl/policies/shell_policies/hashi_server_1_shell_policy.hcl',
+        '/scripts/services/consul/acl/policies/shell_policies/traefik_shell_policy.hcl'
     ],
-    'ansible': ['build/ansible/auth.gcp.yml'],
+    'ansible': ['/scripts/build/ansible/auth.gcp.yml'],
+
     'traefik': [
-        ('services/traefik/traefik-service.json.tmpl', '/etc/traefik/traefik-service.json')
+        ('/scripts/services/traefik/traefik-consul-service.json.tmpl', '/etc/traefik/traefik-consul-service.json'),
+
+        # we'll maintain a json file with the latest routes, this is used by operations/traefik/fetch-service-routes.sh
+        ('/scripts/services/traefik/traefik-service-routes.json.tmpl', '/scripts/services/traefik/traefik-service-routes.json')
     ]
 }
 
@@ -36,10 +40,15 @@ def do_template_render(template_fp, json_data):
     return template.render(**json_data)
 
 
-def render_all(service, files):
+def render_templates(service, files):
 
     if service == 'traefik':
-        data = {'routes': get_traefik_service_routes()}  # note: doesn't include IP allowlist
+        consul_cli = get_cli()
+        data = {
+            'sidecar_upstreams': get_traefik_sidecar_upstreams(consul_cli),
+            'traefik_routes': get_traefik_service_routes(consul_cli),
+            'dashboards_ip_allowlist': get_traefik_dashboards_ip_allowlist(consul_cli)
+        }
     else:
         with open('/etc/node-metadata.json') as f:
             data = json.loads(f.read())
@@ -48,7 +57,6 @@ def render_all(service, files):
         target_path = filepath
         if type(filepath) is tuple:
             filepath, target_path = filepath
-        filepath = os.path.join(SCRIPTS_DIR, filepath)
 
         rendered_tmpl = do_template_render(filepath, data)
 
@@ -62,4 +70,4 @@ if __name__ == '__main__':
     if service not in FILES:
         exit('unexpected service name: "%s"' % service)
 
-    render_all(service, FILES[service])
+    render_templates(service, FILES[service])

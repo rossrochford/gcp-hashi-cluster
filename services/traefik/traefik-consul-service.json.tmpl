@@ -5,8 +5,8 @@
       "sidecar_service": {
         "proxy": {
           "upstreams": [
-            {%- for di in routes %}
-            {"destination_name": "{{ di.service_name }}", "local_bind_port": {{ di.local_bind_port }}}{% if not loop.last %},{% endif %}
+            {%- for di in sidecar_upstreams %}
+            {"destination_name": "{{ di.consul_service_name }}", "local_bind_port": {{ di.local_bind_port }}}{% if not loop.last %},{% endif %}
             {%- endfor %}
           ]
         }

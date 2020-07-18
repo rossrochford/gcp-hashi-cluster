@@ -50,7 +50,7 @@ source "googlecompute" "hashi-cluster-base" {
 
   service_account_email = var.cluster_tf_service_account_email  # "terraform-service-account@${var.project_id}.iam.gserviceaccount.com"
 
-  source_image = "ubuntu-minimal-2004-focal-v20200702"
+  source_image = "ubuntu-2004-focal-v20200701"
   source_image_family = "ubuntu-2004-lts"
 
   image_name = var.base_image_name  # "hashi-cluster-base-v20200614"  # previous: "hashi-cluster-base-v20200607"

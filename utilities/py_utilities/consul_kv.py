@@ -17,6 +17,8 @@ PROJECT_METADATA_LOCK = CTP_PREFIX + '/metadata-lock'
 # every node with have a session, this needs to be explictly created before acquiring Consul locks
 CONSUL_HTTP_TOKEN = os.environ.get('CONSUL_HTTP_TOKEN')
 
+RUN_ENV = "dev" #"prod"
+
 
 def _get_consul_token_from_env():
     with open('/etc/environment') as file:
@@ -27,24 +29,39 @@ def _get_consul_token_from_env():
     return env_variables.get('CONSUL_HTTP_TOKEN')
 
 
-def _get_lock_session_id():
-    with open('/etc/node-metadata.json') as file:
-        metadata = json.loads(file.read())
-    return metadata.get('consul_lock_session_id')
-
-
 # sometimes these environment variables are not in the current
 # shell environment but have been appended to /etc/environment
 if not CONSUL_HTTP_TOKEN:
     CONSUL_HTTP_TOKEN = _get_consul_token_from_env()
 
+
+def get_cli():
+    return consul.Consul(token=CONSUL_HTTP_TOKEN)
+
+
+def _get_lock_session_id(cli=None):
+    cli = cli or get_cli()
+
+    if RUN_ENV == "dev":
+        if 'CONSUL_KV_DEV_SESSION_ID' not in os.environ:
+            session_id = cli.Session.create(cli.agent, name='lock_session__local')
+            os.environ['CONSUL_KV_DEV_SESSION_ID'] = session_id
+        return os.environ['CONSUL_KV_DEV_SESSION_ID']
+
+    with open('/etc/node-metadata.json') as file:
+        return json.loads(file.read()).get('consul_lock_session_id')
+
+
 LOCK_SESSION_ID = _get_lock_session_id()
 
 
-cli = consul.Consul(token=CONSUL_HTTP_TOKEN)
+def create_lock_session(cli):
 
-
-def create_lock_session():
+    if RUN_ENV == "dev":
+        if 'CONSUL_KV_DEV_SESSION_ID' not in os.environ:
+            session_id = cli.Session.create(cli.agent, name='lock_session__local')
+            os.environ['CONSUL_KV_DEV_SESSION_ID'] = session_id
+        return os.environ['CONSUL_KV_DEV_SESSION_ID']
 
     with open('/etc/node-metadata.json') as file:
         metadata = json.loads(file.read())
@@ -59,7 +76,7 @@ def create_lock_session():
     return session_id
 
 
-def _acquire(lock_slug):
+def _acquire(cli, lock_slug):
     retries = 0
     while True:
         success = cli.kv.put(lock_slug, None, acquire=LOCK_SESSION_ID)
@@ -77,14 +94,16 @@ def _log_error(st):
 
 
 def acquire_project_metadata_lock(func):
-
+    # could use this, but it isn't being maintained: https://github.com/kurtome/python-consul-lock
     def inner_func(*args, **kwargs):
         if not LOCK_SESSION_ID:
             _log_error('LOCK_SESSION_ID not found')
             exit(1)
 
+        cli = get_cli()
+
         ans = None
-        success = _acquire(PROJECT_METADATA_LOCK)
+        success = _acquire(cli, PROJECT_METADATA_LOCK)
         if success is False:
             _log_error('failed to acquire consul project metadata lock: %s' % LOCK_SESSION_ID)
             exit(1)
@@ -93,6 +112,7 @@ def acquire_project_metadata_lock(func):
         try:
             ans = func(*args, **kwargs)
         except:
+            import pdb; pdb.set_trace()
             exception_thrown = True
             _log_error('error: exception thrown by %s' % func.__name__)
         finally:
@@ -116,7 +136,7 @@ def _get_project_info():
 
 
 @acquire_project_metadata_lock
-def initialize_project_metadata():
+def initialize_project_metadata(cli):
     initial_data = {
         'node_ips_by_name': {}, 'node_names_by_type': {}
     }
@@ -134,7 +154,7 @@ def initialize_project_metadata():
 
 
 @acquire_project_metadata_lock
-def _register_node_to_project(node_name, node_type, node_ip):
+def _register_node_to_project(cli, node_name, node_type, node_ip):
 
     index, data = cli.kv.get(PROJECT_METADATA_KEY)
     project_data = json.loads(data['Value'].decode())
@@ -148,7 +168,7 @@ def _register_node_to_project(node_name, node_type, node_ip):
     cli.kv.put(PROJECT_METADATA_KEY, json.dumps(project_data))
 
 
-def register_node():
+def register_node(cli):
 
     # we already have some metadata in this file
     with open('/etc/node-metadata.json') as file:
@@ -159,7 +179,7 @@ def register_node():
     node_ip = metadata['node_ip']
 
     # set values on project level
-    _register_node_to_project(node_name, node_type, node_ip)
+    _register_node_to_project(cli, node_name, node_type, node_ip)
 
     # put values at CTN_PREFIX also:
     cli.kv.put(CTN_PREFIX + '/node-name', node_name)
@@ -167,18 +187,13 @@ def register_node():
     cli.kv.put(CTN_PREFIX + '/node-ip', node_ip)
 
 
-@acquire_project_metadata_lock
-def store_traefik_service_routes(route_data_filepath):
-    # in case there are multiple Traefik nodes in the cluster
+'''
+def get_available_traefik_sidecar_ports(existing_routes):
 
     existing_routes = get_traefik_service_routes()
-    existing_routes_by_service_name = {di['service_name']: di for di in existing_routes}
+
     existing_ports = [di['local_bind_port'] for di in existing_routes]
     existing_ports.sort()
-
-    with open(route_data_filepath) as file:
-        route_data = json.loads(file.read())
-        latest_routes = route_data['routes']
 
     max_port = 3000
     if existing_routes:
@@ -187,10 +202,47 @@ def store_traefik_service_routes(route_data_filepath):
     available_ports = [v for v in range(max_port+1, 4501)] + [
         v for v in range(3000, max_port) if v not in existing_ports]
 
-    # insert local_bind_ports, making sure not to change ports of existing services
-    for di in latest_routes:
+    return available_ports
+'''
+
+
+def get_available_traefik_sidecar_ports(cli):
+
+    existing_sidecars = get_traefik_sidecar_upstreams(cli)
+    existing_ports = [di['local_bind_port'] for di in existing_sidecars]
+
+    max_port = 3000
+    if existing_sidecars:
+        max_port = max(existing_ports)
+
+    available_ports = [v for v in range(max_port+1, 4501)] + [
+        v for v in range(3000, max_port) if v not in existing_ports]
+
+    return available_ports
+
+
+def fire_event(cli, name, body=""):
+    cli.event.fire(name, body="")
+
+
+'''
+@acquire_project_metadata_lock
+def append_traefik_service_routes(route_data_or_filepath):
+
+    if type(route_data_or_filepath) is str:
+        with open(route_data_or_filepath) as file:
+            route_data = json.loads(file.read())['routes']
+    else:
+        route_data = route_data_or_filepath
+
+    existing_routes = get_traefik_service_routes()
+    existing_routes_by_service_name = {
+        di['service_name']: di for di in existing_routes
+    }
+    available_ports = get_available_traefik_sidecar_ports(existing_routes)
+
+    for di in route_data:
         if di['service_name'] in existing_routes_by_service_name:
-            di['local_bind_port'] = existing_routes_by_service_name[di['service_name']]['local_bind_port']
             continue
         try:
             di['local_bind_port'] = available_ports.pop(0)
@@ -199,23 +251,104 @@ def store_traefik_service_routes(route_data_filepath):
             _log_error('no more ports available in range 3000-4500')
             exit(1)
 
-    cli.kv.delete('traefik-service-routes/', recurse=True)
-    cli.kv.delete('traefik-dashboards-ip-allowlist/', recurse=True)
+        cli.kv.put('traefik-service-routes/' + di['service_name'], json.dumps(di))
 
-    for route in latest_routes:
-        cli.kv.put('traefik-service-routes/' + route['service_name'], json.dumps(route))
+    cli.event.fire("traefik-routes-updated")
+'''
+
+
+@acquire_project_metadata_lock
+def overwrite_traefik_service_routes(cli, route_data_filepath):
+
+    existing_routes = get_traefik_service_routes(cli)
+    existing_sidecars = get_traefik_sidecar_upstreams(cli)
+    existing_routes_by_name = {di['traefik_service_name']: di for di in existing_routes}
+    existing_sidecars_by_name = {di['consul_service_name']: di for di in existing_sidecars}
+
+    with open(route_data_filepath) as file:
+        route_data = json.loads(file.read())
+
+    latest_routes = route_data['routes']
+    latest_routes_by_name = {di['traefik_service_name']: di for di in latest_routes}
+    latest_consul_services = [di['consul_service_name'] for di in latest_routes]
+
+    # find obsolete routes and sidecars
+    routes_to_remove, sidecars_to_remove = [], []
+    for di in existing_routes:
+        if di['traefik_service_name'] not in latest_routes_by_name:
+            routes_to_remove.append(di['traefik_service_name'])
+        if di['consul_service_name'] not in latest_consul_services:
+            sidecars_to_remove.append(di['consul_service_name'])
+
+    available_sidecar_ports = get_available_traefik_sidecar_ports(cli)
+
+    # add sidecar upstreams and gather ports
+    for di in route_data['routes']:
+        consul_service = di['consul_service_name']
+
+        # if consul_service in existing_sidecars_by_name:
+        #    sidecar_ports[consul_service] = existing_sidecars_by_name[consul_service]  # di['local_bind_port']
+        if consul_service not in existing_sidecars_by_name:
+            try:
+                port = available_sidecar_ports.pop(0)
+            except IndexError:
+                # should never get here as long as we never exceed 1500 routes
+                _log_error('no more ports available in range 3000-4500')
+                exit(1)
+
+            di['local_bind_port'] = port
+            di = {'consul_service_name': consul_service, 'local_bind_port': port}
+
+            key = 'traefik-sidecar-upstreams/' + consul_service
+            cli.kv.put(key, json.dumps(di))
+
+            existing_sidecars_by_name[consul_service] = di
+
+    # add/update routes
+    for di in route_data['routes']:
+        if di['traefik_service_name'] in existing_routes_by_name:
+            if di == existing_routes_by_name[di['traefik_service_name']]:
+                continue  # no update required
+        import pdb; pdb.set_trace()
+        di['local_bind_port'] = existing_sidecars_by_name[di['consul_service_name']]['local_bind_port']
+        key = 'traefik-service-routes/' + di['traefik_service_name']
+        cli.kv.put(key, json.dumps(di))
+
+    # delete routes and sidecars
+    for traefik_service_name in routes_to_remove:
+        cli.kv.delete('traefik-service-routes/' + traefik_service_name)
+
+    for consul_service_name in sidecars_to_remove:
+        cli.kv.delete('traefik-sidecar-upstreams/' + consul_service_name)
 
     # set dashboards_ip_allowlist
+    cli.kv.delete('traefik-dashboards-ip-allowlist/', recurse=True)
     allow_list = route_data.get('dashboards_ip_allowlist', ["0.0.0.0/0"])
     for i, cidr_range in enumerate(allow_list):
         cli.kv.put(
             ('traefik-dashboards-ip-allowlist/%s' % i), cidr_range
         )
 
+    cli.event.fire("traefik-routes-updated")
 
-def get_traefik_service_routes():
 
+def get_traefik_dashboards_ip_allowlist(cli):
+    _, data = cli.kv.get('traefik-dashboards-ip-allowlist/', recurse=True)
+    if data is None:
+        return []
+    # Values are cidr_range strings
+    return [di['Value'].decode() for di in data]
+
+
+def get_traefik_service_routes(cli):
     _, route_data = cli.kv.get('traefik-service-routes/', recurse=True)
+    if route_data is None:
+        return []
+    return [json.loads(di['Value'].decode()) for di in route_data]
+
+
+def get_traefik_sidecar_upstreams(cli):
+    _, route_data = cli.kv.get('traefik-sidecar-upstreams/', recurse=True)
     if route_data is None:
         return []
     return [json.loads(di['Value'].decode()) for di in route_data]
@@ -224,13 +357,14 @@ def get_traefik_service_routes():
 if __name__ == '__main__':
     args = sys.argv[1:]
     action = args[0]
+    consul_cli = get_cli()
 
-    if not CONSUL_HTTP_TOKEN:
+    if RUN_ENV == "prod" and not CONSUL_HTTP_TOKEN:
         print('error: missing CONSUL_HTTP_TOKEN')
         exit(1)
 
     if action == 'create-lock-session':
-        session_id = create_lock_session()
+        session_id = create_lock_session(consul_cli)
         print(session_id)
         exit(0)
 
@@ -239,15 +373,24 @@ if __name__ == '__main__':
         exit(1)
 
     if action == 'initialize-project-metadata':
-        initialize_project_metadata()
+        initialize_project_metadata(consul_cli)
 
     elif action == 'register-node':
-        register_node()
+        register_node(consul_cli)
 
-    elif action == 'store-traefik-service-routes':
+    elif action == 'overwrite-traefik-service-routes':
         if len(args) != 2:
-            print('error: store-traefik-service-routes expects filepath of json file')
+            print('error: overwrite-traefik-service-routes expects a filepath argument')
             exit(1)
-        store_traefik_service_routes(args[1])
+        overwrite_traefik_service_routes(consul_cli, args[1])
+
     else:
         exit('unexpected action: %s' % action)
+
+'''
+elif action == 'append-traefik-service-routes':
+    if len(args) != 2:
+        print('error: append-traefik-service-routes expects a filepath argument')
+        exit(1)
+    append_traefik_service_routes(args[1])
+'''

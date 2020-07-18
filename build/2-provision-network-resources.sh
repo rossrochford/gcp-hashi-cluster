@@ -15,6 +15,11 @@ VARS_FILEPATH="$REPO_DIRECTORY/build/conf/project-info.json"
 # packer build should be run here (ssh key file paths are relative to this)
 cd "$REPO_DIRECTORY/infrastructure/cluster-networking"
 
+# delete any previous Terraform state
+rm -rf ".terraform"
+rm -f "terraform.tfstate"
+rm -f "terraform.tfstate.backup"
+
 
 terraform init
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# create /etc/traefik/traefik-service.json with jinja2
+# create /etc/traefik/traefik-consul-service.json with jinja2
 python3 /scripts/utilities/py_utilities/render_config_templates.py "traefik"
 
 

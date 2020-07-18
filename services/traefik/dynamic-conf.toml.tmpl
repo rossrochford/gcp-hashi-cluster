@@ -13,6 +13,9 @@
     [http.middlewares.dashboards-ip-allowlist.ipWhiteList]
       sourceRange = [{{ range tree "traefik-dashboards-ip-allowlist/" }}"{{ .Value }}",{{ end }}]
 
+    [http.middlewares.strip-bc-session-prefix.stripPrefixRegex]
+      regex = ["/bc-session-[a-z0-9]{14}"]
+
   [http.routers]
     [http.routers.traefik-dashboard]
       rule = "Host(`traefik.{{ "/domain-name" | plugin "ctp" }}`)"
@@ -35,9 +38,9 @@
     {{ range tree "traefik-service-routes/" }}
     [http.routers.{{ .Key }}-router]
       {{ with $d := .Value | parseJSON }}
-      service = "{{ $d.service_name }}"
+      service = "{{ $d.traefik_service_name }}"
       rule = "{{ $d.routing_rule }}"
-      middlewares = ["source-ratelimit"]
+      middlewares = [{{ range $d.middlewares }}"{{ . }}",{{ end }}]
       entryPoints = ["web"]
       {{ end }}
     {{ end }}

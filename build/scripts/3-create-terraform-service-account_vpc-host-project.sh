@@ -14,9 +14,7 @@ declare -a SERVICE_ACCOUNT_PROJECT_ROLES__VPC_HOST_PROJECT=(
   # so Terraform can create networking resources
   "roles/compute.networkAdmin"
   "roles/compute.securityAdmin"
-  "organizations/$ORGANIZATION_ID/roles/computeAddressUser"
 )
-
 
 # Create service account
 gcloud iam service-accounts create "${SERVICE_ACCOUNT_NAME}" \
@@ -42,6 +40,3 @@ echo "creating credentials keys for service account"
 
 gcloud iam service-accounts keys create "$REPO_DIRECTORY/keys/terraform-service-account-credentials_vpc-host-project.json" \
     --iam-account "${SERVICE_ACCOUNT_EMAIL}" --project $VPC_HOST_PROJECT_ID
-
-
-

@@ -10,13 +10,7 @@ client = google.cloud.logging.Client()
 client.setup_logging()
 
 
-LOG_LEVELS = [
-    'debug',
-    'info',
-    'warning',
-    'error',
-    'critical'
-]
+LOG_LEVELS = ['debug', 'info', 'warning', 'error', 'critical']
 
 
 def get_instance_resource():

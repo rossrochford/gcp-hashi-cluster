@@ -24,6 +24,9 @@ create_project () {
   gcloud projects create $1 --organization=$ORGANIZATION_ID --user-output-enabled false
   sleep 2
   gcloud beta billing projects link $1 --billing-account=$BILLING_ACCOUNT
+  if [[ $? != 0 ]]; then
+    echo "error: 'gcloud beta billing projects link' failed"; exit 1
+  fi
   sleep 2
   gcloud services enable compute.googleapis.com --project $1
   sleep 30

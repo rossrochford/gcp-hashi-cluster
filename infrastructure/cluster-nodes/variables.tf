@@ -99,6 +99,13 @@ variable "load_balancer_public_ip_address" {
   type = string
 }
 
+variable "http_timeout_sec" {
+  type = number
+}
+
+variable "lb_disable_tls" {
+  default = false
+}
 
 variable "traefik_server_size" {
   type = string
