@@ -5,7 +5,7 @@ import jinja2
 
 from py_utilities.consul_kv import (
     get_traefik_sidecar_upstreams, get_traefik_service_routes,
-    get_traefik_dashboards_ip_allowlist, get_cli
+    get_traefik_dashboards_ip_allowlist, ConsulCli
 )
 
 
@@ -43,7 +43,7 @@ def do_template_render(template_fp, json_data):
 def render_templates(service, files):
 
     if service == 'traefik':
-        consul_cli = get_cli()
+        consul_cli = ConsulCli()
         data = {
             'sidecar_upstreams': get_traefik_sidecar_upstreams(consul_cli),
             'traefik_routes': get_traefik_service_routes(consul_cli),

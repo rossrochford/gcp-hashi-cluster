@@ -1,5 +1,6 @@
 import json
 import os
+import socket
 import sys
 import syslog
 import time
@@ -17,7 +18,7 @@ PROJECT_METADATA_LOCK = CTP_PREFIX + '/metadata-lock'
 # every node with have a session, this needs to be explictly created before acquiring Consul locks
 CONSUL_HTTP_TOKEN = os.environ.get('CONSUL_HTTP_TOKEN')
 
-RUN_ENV = "dev" #"prod"
+RUN_ENV = "prod"
 
 
 def _get_consul_token_from_env():
@@ -29,63 +30,81 @@ def _get_consul_token_from_env():
     return env_variables.get('CONSUL_HTTP_TOKEN')
 
 
+def _get_project_info():
+    resp = requests.get(
+        'http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info',
+        headers={'Metadata-Flavor': 'Google'}
+    )
+    if resp.status_code != 200:
+        _log_error('error: failed to retrieve project-info from computeMetadata')
+        return None
+    return resp.json()
+
+
+def _get_instance_name():
+    if RUN_ENV == 'dev':
+        return socket.gethostname()
+
+    resp = requests.get(
+        'http://metadata.google.internal/computeMetadata/v1/instance/name',
+        headers={'Metadata-Flavor': 'Google'}
+    )
+    if resp.status_code != 200:
+        _log_error('error: failed to retrieve project-info from computeMetadata')
+        exit(1)
+    return resp.content.decode()
+
+
 # sometimes these environment variables are not in the current
 # shell environment but have been appended to /etc/environment
 if not CONSUL_HTTP_TOKEN:
     CONSUL_HTTP_TOKEN = _get_consul_token_from_env()
 
 
-def get_cli():
-    return consul.Consul(token=CONSUL_HTTP_TOKEN)
+class ConsulCli(object):
 
+    def __init__(self):
+        self.client = consul.Consul(token=CONSUL_HTTP_TOKEN)
+        self.lock_session_id = self.get_or_create_lock_session()
 
-def _get_lock_session_id(cli=None):
-    cli = cli or get_cli()
+    @property
+    def kv(self):
+        return self.client.kv
 
-    if RUN_ENV == "dev":
-        if 'CONSUL_KV_DEV_SESSION_ID' not in os.environ:
-            session_id = cli.Session.create(cli.agent, name='lock_session__local')
-            os.environ['CONSUL_KV_DEV_SESSION_ID'] = session_id
-        return os.environ['CONSUL_KV_DEV_SESSION_ID']
+    @property
+    def event(self):
+        return self.client.event
 
-    with open('/etc/node-metadata.json') as file:
-        return json.loads(file.read()).get('consul_lock_session_id')
+    def get_lock_sessions_by_name(self):
+        _, sessions = self.client.Session.list(self.client.agent)
+        return {di['Name']: di for di in sessions}
 
+    def get_or_create_lock_session(self):
+        instance_name = _get_instance_name()
+        lock_session_name = 'lock_session__' + instance_name
 
-LOCK_SESSION_ID = _get_lock_session_id()
+        sessions_by_name = self.get_lock_sessions_by_name()
+        if lock_session_name in sessions_by_name:
+            return sessions_by_name[lock_session_name]['ID']
 
+        # create lock session
+        session_id = self.client.Session.create(
+            self.client.agent, name='lock_session__' + instance_name
+        )
+        return session_id
 
-def create_lock_session(cli):
-
-    if RUN_ENV == "dev":
-        if 'CONSUL_KV_DEV_SESSION_ID' not in os.environ:
-            session_id = cli.Session.create(cli.agent, name='lock_session__local')
-            os.environ['CONSUL_KV_DEV_SESSION_ID'] = session_id
-        return os.environ['CONSUL_KV_DEV_SESSION_ID']
-
-    with open('/etc/node-metadata.json') as file:
-        metadata = json.loads(file.read())
-
-    session_id = cli.Session.create(cli.agent, name='lock_session__' + metadata['node_name'])
-
-    metadata['consul_lock_session_id'] = session_id
-
-    with open('/etc/node-metadata.json', 'w') as file:
-        file.write(json.dumps(metadata))
-
-    return session_id
-
-
-def _acquire(cli, lock_slug):
-    retries = 0
-    while True:
-        success = cli.kv.put(lock_slug, None, acquire=LOCK_SESSION_ID)
-        if success:
-            return True
-        retries += 1
-        if retries > 200:
-            return False
-        time.sleep(1)
+    def acquire(self, lock_slug):
+        retries = 0
+        while True:
+            success = self.client.kv.put(
+                lock_slug, None, acquire=self.lock_session_id
+            )
+            if success:
+                return True
+            retries += 1
+            if retries > 200:
+                return False
+            time.sleep(1)
 
 
 def _log_error(st):
@@ -96,16 +115,13 @@ def _log_error(st):
 def acquire_project_metadata_lock(func):
     # could use this, but it isn't being maintained: https://github.com/kurtome/python-consul-lock
     def inner_func(*args, **kwargs):
-        if not LOCK_SESSION_ID:
-            _log_error('LOCK_SESSION_ID not found')
-            exit(1)
 
-        cli = get_cli()
+        cli = ConsulCli()
 
         ans = None
-        success = _acquire(cli, PROJECT_METADATA_LOCK)
+        success = cli.acquire(cli, PROJECT_METADATA_LOCK)
         if success is False:
-            _log_error('failed to acquire consul project metadata lock: %s' % LOCK_SESSION_ID)
+            _log_error('failed to acquire project lock: %s' % cli.lock_session_id)
             exit(1)
 
         exception_thrown = False
@@ -116,23 +132,12 @@ def acquire_project_metadata_lock(func):
             exception_thrown = True
             _log_error('error: exception thrown by %s' % func.__name__)
         finally:
-            cli.kv.put(PROJECT_METADATA_LOCK, None, release=LOCK_SESSION_ID)
+            cli.kv.put(PROJECT_METADATA_LOCK, None, release=cli.lock_session_id)
         if exception_thrown:
             exit(1)  # quit, exception happened
         return ans
 
     return inner_func
-
-
-def _get_project_info():
-    resp = requests.get(
-        'http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info',
-        headers={'Metadata-Flavor': 'Google'}
-    )
-    if resp.status_code != 200:
-        _log_error('error: failed to retrieve project-info from computeMetadata')
-        return None
-    return resp.json()
 
 
 @acquire_project_metadata_lock
@@ -357,20 +362,18 @@ def get_traefik_sidecar_upstreams(cli):
 if __name__ == '__main__':
     args = sys.argv[1:]
     action = args[0]
-    consul_cli = get_cli()
 
     if RUN_ENV == "prod" and not CONSUL_HTTP_TOKEN:
         print('error: missing CONSUL_HTTP_TOKEN')
         exit(1)
 
     if action == 'create-lock-session':
-        session_id = create_lock_session(consul_cli)
-        print(session_id)
+        # ConsulCli() creates this on initialization if missing
+        consul_cli = ConsulCli()
+        print(consul_cli.lock_session_id)
         exit(0)
 
-    if not LOCK_SESSION_ID:
-        print('error: missing CONSUL_LOCK_SESSION_ID')
-        exit(1)
+    consul_cli = ConsulCli()
 
     if action == 'initialize-project-metadata':
         initialize_project_metadata(consul_cli)
