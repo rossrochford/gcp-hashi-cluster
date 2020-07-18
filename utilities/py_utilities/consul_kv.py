@@ -119,7 +119,7 @@ def acquire_project_metadata_lock(func):
         cli = ConsulCli()
 
         ans = None
-        success = cli.acquire(cli, PROJECT_METADATA_LOCK)
+        success = cli.acquire(PROJECT_METADATA_LOCK)
         if success is False:
             _log_error('failed to acquire project lock: %s' % cli.lock_session_id)
             exit(1)
