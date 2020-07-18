@@ -128,7 +128,6 @@ def acquire_project_metadata_lock(func):
         try:
             ans = func(*args, **kwargs)
         except:
-            import pdb; pdb.set_trace()
             exception_thrown = True
             _log_error('error: exception thrown by %s' % func.__name__)
         finally:
@@ -314,7 +313,6 @@ def overwrite_traefik_service_routes(cli, route_data_filepath):
         if di['traefik_service_name'] in existing_routes_by_name:
             if di == existing_routes_by_name[di['traefik_service_name']]:
                 continue  # no update required
-        import pdb; pdb.set_trace()
         di['local_bind_port'] = existing_sidecars_by_name[di['consul_service_name']]['local_bind_port']
         key = 'traefik-service-routes/' + di['traefik_service_name']
         cli.kv.put(key, json.dumps(di))
