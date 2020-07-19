@@ -1,3 +1,6 @@
+agent "{{ node_name }}" {
+  policy = "read"
+}
 
 node_prefix "" {
    policy = "read"

@@ -18,6 +18,7 @@ FILES = {
         ('/scripts/services/consul/systemd/consul-client.service.tmpl', '/etc/systemd/system/consul-client.service'),
         '/scripts/services/consul/acl/policies/consul_agent_policy.hcl',
         '/scripts/services/consul/acl/policies/shell_policies/hashi_server_1_shell_policy.hcl',
+        '/scripts/services/consul/acl/policies/shell_policies/read_only_policy.hcl',
         '/scripts/services/consul/acl/policies/shell_policies/traefik_shell_policy.hcl'
     ],
     'ansible': ['/scripts/build/ansible/auth.gcp.yml'],

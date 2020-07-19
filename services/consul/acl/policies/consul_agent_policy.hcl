@@ -13,8 +13,12 @@ service_prefix "" {
   policy = "read"
 }
 
-agent "" {
+agent "{{ node_name }}" {
   policy = "write"
+}
+
+agent_prefix "" {
+  policy = "read"
 }
 
 key_prefix "{{ ctp_prefix }}/" {
@@ -47,7 +51,7 @@ key_prefix "traefik-dashboards-ip-allowlist/" {
   policy = "write"
 }
 
-# "traefik-routes-updated" event causes this service to be re-registered in routes_changed.sh
+# "traefik-routes-updated" event causes this service to be re-registered in routes_updated.sh
 service_prefix "traefik" {
    policy = "write"
 }

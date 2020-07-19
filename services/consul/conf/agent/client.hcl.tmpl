@@ -7,13 +7,3 @@ enable_local_script_checks = true
 ca_file = "/etc/consul.d/tls-certs/consul-agent-ca.pem"
 cert_file = "/etc/consul.d/tls-certs/dc1-client-consul.pem"
 key_file = "/etc/consul.d/tls-certs/dc1-client-consul-key.pem"
-
-
-{% if node_type == "traefik" %}
-watches {
-  type = "event"
-  name = "traefik-routes-updated"
-  handler_type = "script"
-  args = ["/scripts/services/traefik/routes_changed.sh", "1"]
-}
-{% endif %}

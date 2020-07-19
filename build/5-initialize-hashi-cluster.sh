@@ -48,10 +48,7 @@ while IFS= read -r LINE; do
     INSTANCE_NAME=$(echo $LINE | cut -d',' -f1)
     ZONE=$(echo $LINE | cut -d',' -f2)
 
-    if [[ $INSTANCE_NAME == $(hostname) ]]; then
-      # no need to copy, it's already present on this node
-      continue
-    fi
+    echo "transferring vault-tls-certs.zip to: $INSTANCE_NAME ($ZONE)"
 
     gcloud compute scp /tmp/ansible-data/vault-tls-certs.zip \
       "$INSTANCE_NAME:/tmp/ansible-data/vault-tls-certs.zip" \

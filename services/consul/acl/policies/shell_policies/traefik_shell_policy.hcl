@@ -1,4 +1,8 @@
 
+agent "{{ node_name }}" {
+  policy = "read"
+}
+
 node_prefix "" {
    policy = "read"
 }
@@ -27,7 +31,6 @@ session_prefix "project_lock_session__" {
 session_prefix "" {
   policy = "read"
 }
-
 
 
 # traefik stuff

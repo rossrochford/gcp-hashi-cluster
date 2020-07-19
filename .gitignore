@@ -21,6 +21,7 @@ infrastructure/cluster-networking/terraform.tfstate.backup
 infrastructure/cluster-nodes/.terraform/
 infrastructure/cluster-nodes/terraform.tfstate
 infrastructure/cluster-nodes/terraform.tfstate.backup
+infrastructure/cluster-nodes/.terraform.tfstate.lock.info
 
 build/scripts/tls-certs/.terraform
 build/scripts/tls-certs/terraform.tfstate
