@@ -23,10 +23,10 @@ cd /scripts/services/nomad
 
 consul-template -template "conf/agent/base.hcl.tmpl:/etc/nomad.d/base.hcl" -once
 consul-template -template "conf/agent/client.hcl.tmpl:/etc/nomad.d/client.hcl" -once
-consul-template -template "systemd/nomad-client.service:/etc/systemd/system/nomad-client.service" -once
+consul-template -template "systemd/nomad-client.service.tmpl:/etc/systemd/system/nomad-client.service" -once
 
 
 chmod -R 700 /etc/nomad.d/
-chmod 0644 /etc/systemd/system/nomad-server.service
+chmod 0644 /etc/systemd/system/nomad-client.service
 
 systemctl daemon-reload

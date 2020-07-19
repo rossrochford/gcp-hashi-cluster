@@ -12,8 +12,8 @@ for mhz in $CPU_CORE_MHZ; do
   ((TOTAL_MHZ=TOTAL_MHZ+mhz_int))
 done
 
-# get available memory from row 4 column 4
-MEMORY_AVAILABLE=$(free --mega -t | sed -n 4p | awk '{print $4}')
+# get available memory from row 2 column 7
+MEMORY_AVAILABLE=$(free --mega -t | sed -n 2p | awk '{print $7}')
 
 
 echo "$TOTAL_MHZ $MEMORY_AVAILABLE"

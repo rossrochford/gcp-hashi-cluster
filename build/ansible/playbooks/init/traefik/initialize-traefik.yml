@@ -25,6 +25,7 @@
       when: current_index == "0"
     # - shell: "consul services register /etc/traefik/traefik-consul-service.json"
     #  when: current_index == "0"
+    -
     - shell: "consul intention create -allow traefik '*'"
       when: current_index == "0"
 

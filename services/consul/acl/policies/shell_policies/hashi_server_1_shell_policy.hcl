@@ -30,3 +30,11 @@ key_prefix "" {
 event "traefik-routes-updated" {
   policy = "write"
 }
+
+session_prefix "project_lock_session__" {
+  policy = "write"
+}
+
+session_prefix "" {
+  policy = "read"
+}

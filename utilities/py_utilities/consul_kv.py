@@ -81,7 +81,7 @@ class ConsulCli(object):
 
     def get_or_create_lock_session(self):
         instance_name = _get_instance_name()
-        lock_session_name = 'lock_session__' + instance_name
+        lock_session_name = 'project_lock_session__' + instance_name
 
         sessions_by_name = self.get_lock_sessions_by_name()
         if lock_session_name in sessions_by_name:
@@ -89,7 +89,7 @@ class ConsulCli(object):
 
         # create lock session
         session_id = self.client.Session.create(
-            self.client.agent, name='lock_session__' + instance_name
+            self.client.agent, name=lock_session_name
         )
         return session_id
 

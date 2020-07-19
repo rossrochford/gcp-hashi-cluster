@@ -26,7 +26,7 @@ cd /scripts/services/nomad
 
 consul-template -template "conf/agent/base.hcl.tmpl:/etc/nomad.d/base.hcl" -once
 consul-template -template "conf/agent/server.hcl.tmpl:/etc/nomad.d/server.hcl" -once
-consul-template -template "systemd/nomad-server.service:/etc/systemd/system/nomad-server.service" -once
+consul-template -template "systemd/nomad-server.service.tmpl:/etc/systemd/system/nomad-server.service" -once
 
 
 chmod -R 700 /etc/nomad.d/

@@ -10,3 +10,7 @@ service_prefix "" {
 key_prefix "" {
    policy = "read"
 }
+
+session_prefix "" {
+  policy = "read"
+}
