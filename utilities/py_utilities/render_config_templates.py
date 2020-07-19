@@ -23,10 +23,10 @@ FILES = {
     'ansible': ['/scripts/build/ansible/auth.gcp.yml'],
 
     'traefik': [
-        ('/scripts/services/traefik/traefik-consul-service.json.tmpl', '/etc/traefik/traefik-consul-service.json'),
+        ('/scripts/services/traefik/conf/traefik-consul-service.json.tmpl', '/etc/traefik/traefik-consul-service.json'),
 
         # we'll maintain a json file with the latest routes, this is used by operations/traefik/fetch-service-routes.sh
-        ('/scripts/services/traefik/traefik-service-routes.json.tmpl', '/scripts/services/traefik/traefik-service-routes.json')
+        ('/scripts/services/traefik/conf/traefik-service-routes.json.tmpl', '/scripts/services/traefik/traefik-service-routes.json')
     ]
 }
 

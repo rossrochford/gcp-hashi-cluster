@@ -1,0 +1,4 @@
+{
+  "dashboards_ip_allowlist": ["0.0.0.0/0"],
+  "routes": []
+}

@@ -47,7 +47,7 @@
     CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
   tasks:
     # estimate available CPU and memory for traefik Nomad clients, based on the first traefik node
-    - shell: "/scripts/services/traefik/set_nomad_resources.sh"
+    - shell: "/scripts/services/traefik/init/set_nomad_resources.sh"
       when: current_index == "0"
 
     - shell: "/scripts/services/nomad/init/setup_nomad_client.sh {{ vault_server_1_ip }}"
