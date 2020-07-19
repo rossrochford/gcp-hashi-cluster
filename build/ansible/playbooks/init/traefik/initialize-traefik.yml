@@ -28,4 +28,4 @@
     - shell: "consul intention create -allow traefik '*'"
       when: current_index == "0"
 
-    - shell: "systemctl enable traefik-sidecar-proxy.service; systemctl start traefik-sidecar-proxy.service"
+    - shell: "/scripts/services/traefik/launch_sidecar_proxy.sh"

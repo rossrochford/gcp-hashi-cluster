@@ -1,10 +1,6 @@
 #!/bin/bash
 
 
-# create /etc/traefik/traefik-consul-service.json with jinja2
-python3 /scripts/utilities/py_utilities/render_config_templates.py "traefik"
-
-
 if [[ $(check_exists "file" "/etc/traefik/traefik-consul-service-token.json") == "no" ]]; then
   consul acl token create -description="Traefik service token" -service-identity="traefik" -format=json > /etc/traefik/traefik-consul-service-token.json
 fi
@@ -22,3 +18,6 @@ if [[ $(check_exists "file" "/etc/systemd/system/traefik-sidecar-proxy.service")
   systemctl daemon-reload
 fi
 
+
+systemctl enable traefik-sidecar-proxy.service
+systemctl start traefik-sidecar-proxy.service

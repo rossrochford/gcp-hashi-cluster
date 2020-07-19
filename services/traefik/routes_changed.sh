@@ -4,7 +4,8 @@
 # a known issue with Consul watches, the commands below should still work even with missing KV data
 
 
-/scripts/services/traefik/render_traefik_sidecar_config.sh
+# create /etc/traefik/traefik-consul-service.json with jinja2
+python3 /scripts/utilities/py_utilities/render_config_templates.py "traefik"
 
 /scripts/services/traefik/render_traefik_routes_config.sh
 
