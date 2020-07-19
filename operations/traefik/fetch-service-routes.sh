@@ -32,7 +32,7 @@ if [ -f $ROUTES_FILEPATH ]; then
 fi
 
 
-gcloud compute scp "$INSTANCE_NAME:/scripts/services/traefik/traefik-service-routes.json" \
+gcloud compute scp "$INSTANCE_NAME:/etc/traefik/traefik-service-routes.json" \
       "$REPO_DIRECTORY/operations/traefik/traefik-service-routes.json" \
       --project $CLUSTER_PROJECT_ID \
       --zone $INSTANCE_ZONE \

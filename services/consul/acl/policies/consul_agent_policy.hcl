@@ -13,17 +13,9 @@ service_prefix "" {
   policy = "read"
 }
 
-
 agent "" {
   policy = "write"
 }
-
-{% if node_type == "traefik" %}
-key_prefix "traefik-service-routes/" {
-  policy = "write"
-}
-{% endif %}
-
 
 key_prefix "{{ ctp_prefix }}/" {
   policy = "write"
@@ -32,6 +24,37 @@ key_prefix "{{ ctp_prefix }}/" {
 key_prefix "{{ ctn_prefix }}/" {
   policy = "write"
 }
+
+# is this necessary for watches to work?
+event_prefix "" {
+  policy = "read"
+}
+
+
+
+# traefik stuff
+
+{% if node_type == "traefik" %}
+key_prefix "traefik-service-routes/" {
+  policy = "write"
+}
+
+key_prefix "traefik-sidecar-upstreams/" {
+  policy = "write"
+}
+
+key_prefix "traefik-dashboards-ip-allowlist/" {
+  policy = "write"
+}
+
+# "traefik-routes-updated" event causes this service to be re-registered in routes_changed.sh
+service_prefix "traefik" {
+   policy = "write"
+}
+{% endif %}
+
+
+
 
 /*
 Suggestion from: https://learn.hashicorp.com/consul/day-0/acl-guide

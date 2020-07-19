@@ -3,9 +3,6 @@ node_prefix "" {
    policy = "read"
 }
 
-service_prefix "traefik" {
-   policy = "write"
-}
 
 service_prefix "" {
    policy = "read"
@@ -15,20 +12,12 @@ key_prefix "{{ ctp_prefix }}/metadata-lock" {
   policy = "write"
 }
 
-key_prefix "traefik-service-routes/" {
-   policy = "write"
-}
-
-key_prefix "traefik-dashboards-ip-allowlist/" {
-   policy = "write"
-}
-
 key_prefix "" {
    policy = "read"
 }
 
-event "traefik-routes-updated" {
-  policy = "write"
+event_prefix "" {
+  policy = "read"
 }
 
 session_prefix "project_lock_session__" {
@@ -37,4 +26,28 @@ session_prefix "project_lock_session__" {
 
 session_prefix "" {
   policy = "read"
+}
+
+
+
+# traefik stuff
+
+key_prefix "traefik-service-routes/" {
+  policy = "write"
+}
+
+key_prefix "traefik-sidecar-upstreams/" {
+  policy = "write"
+}
+
+key_prefix "traefik-dashboards-ip-allowlist/" {
+  policy = "write"
+}
+
+service_prefix "traefik" {
+   policy = "write"
+}
+
+event "traefik-routes-updated" {
+  policy = "write"
 }

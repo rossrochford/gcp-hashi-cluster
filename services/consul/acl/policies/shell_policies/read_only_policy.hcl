@@ -14,3 +14,7 @@ key_prefix "" {
 session_prefix "" {
   policy = "read"
 }
+
+event_prefix "" {
+  policy = "read"
+}
