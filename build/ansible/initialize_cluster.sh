@@ -122,18 +122,18 @@ run_playbook nomad initialize-nomad.yml
 
 
 
-# Initialize Traefik
-# ------------------------------
-
-run_playbook traefik initialize-traefik.yml
-
-
-
 # Add read-only tokens to /etc/environment on each node, with a special token for hashi-server-1
 # --------------------------------------------
 
 echo "setting agent tokens for shell"
 run_playbook consul set-agent-tokens-for-shell.yml
+
+
+
+# Initialize Traefik (note: set-agent-tokens-for-shell.yml should preceed this because traefik/init/launch_config_watcher.sh uses the consul agent token)
+# ------------------------------
+
+run_playbook traefik initialize-traefik.yml
 
 
 
