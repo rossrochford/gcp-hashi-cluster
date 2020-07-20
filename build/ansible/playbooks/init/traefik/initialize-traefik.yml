@@ -6,12 +6,10 @@
   become_method: sudo
   vars:
     consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
-    current_ip: "{{ ansible_default_ipv4.address }}"
     current_index: "{{ ansible_play_batch.index(inventory_hostname) }}"
   environment:
     CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
   tasks:
-    - shell: "cp /scripts/services/traefik/conf/traefik.toml /etc/traefik/traefik.toml"
 
     - shell: "python3 /scripts/utilities/py_utilities/consul_kv.py overwrite-traefik-service-routes /scripts/services/traefik/conf/initial-service-routes.json; sleep 1"
       when: current_index == "0"
@@ -19,23 +17,10 @@
     # - shell: "/scripts/services/traefik/render_traefik_sidecar_config.sh"
     # - shell: "/scripts/services/traefik/render_traefik_routes_config.sh"
 
-    - shell: "/scripts/services/traefik/init/launch_config_watcher.sh; sleep 2"
+    - shell: "cp /scripts/services/traefik/conf/traefik.toml /etc/traefik/traefik.toml"
 
-
-- hosts: traefik
-  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
-  become: yes
-  become_method: sudo
-  vars:
-    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
-    current_ip: "{{ ansible_default_ipv4.address }}"
-    current_index: "{{ ansible_play_batch.index(inventory_hostname) }}"
-  environment:
-    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
-  tasks:
-
-    - shell: "consul event -name traefik-routes-updated"
-      when: current_index == "0"
+    # render config files and register Traefik service with Consul
+    - shell: "/scripts/services/traefik/routes_updated.sh"
 
     - shell: "consul-template -once -template '/scripts/services/traefik/conf/traefik.nomad.tmpl:/etc/traefik/traefik.nomad'"
       when: current_index == "0"
@@ -44,9 +29,20 @@
 
     # - shell: "consul services register /etc/traefik/traefik-consul-service.json"
     #  when: current_index == "0"
-    -
+
     - shell: "consul intention create -allow traefik '*'"
       when: current_index == "0"
 
-    - shell: "/scripts/services/traefik/init/launch_sidecar_proxy.sh"
 
+- hosts: traefik
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  become: yes
+  become_method: sudo
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
+  tasks:
+    - shell: "/scripts/services/traefik/init/launch_sidecar_proxy.sh"
+    - shell: "/scripts/services/traefik/init/launch_config_watcher.sh"
+
+
+# current_ip: "{{ ansible_default_ipv4.address }}"
