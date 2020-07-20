@@ -57,6 +57,10 @@ while IFS= read -r LINE; do
       --tunnel-through-iap \
       --ssh-key-file=$CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE
 
+      if [[ $? != 0 ]]; then
+        echo "SCP failed, exiting"; exit 1
+      fi
+
 done <<< "$INSTANCES"
 
 
@@ -106,6 +110,11 @@ gcloud compute scp "/tmp/ansible-data/collected-keys.zip" "$INSTANCE_NAME:/tmp/c
   --zone=$INSTANCE_ZONE \
   --tunnel-through-iap \
   --ssh-key-file=$CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE
+
+if [[ $? != 0 ]]; then
+  rm -f "/tmp/ansible-data/collected-keys.zip"
+  echo "SCP failed, exiting"; exit 1
+fi
 
 
 rm -f "/tmp/ansible-data/collected-keys.zip"

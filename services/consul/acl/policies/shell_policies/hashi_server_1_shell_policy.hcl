@@ -1,4 +1,7 @@
-agent "{{ node_name }}" {
+
+# required for watch/events
+# todo: restrict this to: agent "{{ node_name }} { }, haven't tested it but it should work
+agent_prefix "" {
   policy = "read"
 }
 
