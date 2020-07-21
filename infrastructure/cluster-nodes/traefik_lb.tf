@@ -18,7 +18,7 @@ resource "google_compute_global_forwarding_rule" "https" {
   count = var.lb_disable_tls ? 0 : 1
   project    = var.cluster_service_project_id
   name       = "traefik-lb-global-forwarding-rule"
-  target     = google_compute_target_https_proxy.traefik-lb-https-proxy.self_link
+  target     = google_compute_target_https_proxy.traefik-lb-https-proxy.0.self_link
   port_range = "443"
   ip_address = var.load_balancer_public_ip_address
   load_balancing_scheme = "EXTERNAL"
@@ -37,9 +37,9 @@ resource "google_compute_target_https_proxy" "traefik-lb-https-proxy" {
   name    = "traefik-lb-https-proxy"
   url_map = google_compute_url_map.traefik-lb-url-map.self_link
 
-   ssl_certificates = [google_compute_managed_ssl_certificate.traefik-lb-ssl-cert.id]
-   ssl_policy       = google_compute_ssl_policy.traefik-lb-ssl-policy.self_link
-   # quic_override    = var.quic ? "ENABLE" : null
+  ssl_certificates = [google_compute_managed_ssl_certificate.traefik-lb-ssl-cert.0.id]
+  ssl_policy       = google_compute_ssl_policy.traefik-lb-ssl-policy.0.self_link
+  # quic_override    = var.quic ? "ENABLE" : null
 }
 
 
@@ -50,7 +50,7 @@ resource "google_compute_global_forwarding_rule" "http" {
 
   project    = var.cluster_service_project_id
   name       = "traefik-lb-global-forwarding-rule"
-  target     = google_compute_target_http_proxy.traefik-lb-http-proxy.self_link
+  target     = google_compute_target_http_proxy.traefik-lb-http-proxy.0.self_link
   port_range = "80"
   ip_address = var.load_balancer_public_ip_address
   load_balancing_scheme = "EXTERNAL"
