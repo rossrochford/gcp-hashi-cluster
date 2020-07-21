@@ -12,6 +12,8 @@ Group=root
 Environment=SYSTEMD_LOG_LEVEL=debug
 Environment=CONSUL_HTTP_ADDR=none
 Environment=CONSUL_HTTP_TOKEN=none
+Environment=CTN_PREFIX=none
+Environment=CTP_PREFIX=none
 ExecStart=/usr/local/bin/consul watch -type=event -name=traefik-routes-updated /scripts/services/traefik/routes_updated.sh
 KillMode=process
 Restart=always

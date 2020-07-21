@@ -300,7 +300,6 @@ def overwrite_traefik_service_routes(cli, route_data_filepath):
                 _log_error('no more ports available in range 3000-4500')
                 exit(1)
 
-            di['local_bind_port'] = port
             di = {'consul_service_name': consul_service, 'local_bind_port': port}
 
             key = 'traefik-sidecar-upstreams/' + consul_service
@@ -313,7 +312,22 @@ def overwrite_traefik_service_routes(cli, route_data_filepath):
         if di['traefik_service_name'] in existing_routes_by_name:
             if di == existing_routes_by_name[di['traefik_service_name']]:
                 continue  # no update required
-        di['local_bind_port'] = existing_sidecars_by_name[di['consul_service_name']]['local_bind_port']
+
+        if 'routing_rule' not in di:
+            print('no "routing_rule" found, skipping route for: %s' % di['consul_service_name'])
+            continue
+
+        middlewares = di.get('middlewares', [])
+        if 'source-ratelimit' in middlewares:
+            middlewares.append('source-ratelimit')
+
+        di = {
+            'traefik_service_name': di['traefik_service_name'],
+            'consul_service_name': di['consul_service_name'],
+            'routing_rule': di['routing_rule'],
+            'middlewares': middlewares,
+            'local_bind_port': existing_sidecars_by_name[di['consul_service_name']]['local_bind_port'],
+        }
         key = 'traefik-service-routes/' + di['traefik_service_name']
         cli.kv.put(key, json.dumps(di))
 

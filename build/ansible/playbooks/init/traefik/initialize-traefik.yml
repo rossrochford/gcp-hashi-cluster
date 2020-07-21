@@ -38,6 +38,8 @@
   remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
   become: yes
   become_method: sudo
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
   environment:
     CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
   tasks:

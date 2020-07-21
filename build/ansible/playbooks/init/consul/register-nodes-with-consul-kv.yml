@@ -23,7 +23,7 @@
   any_errors_fatal: true
   vars:
     consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
-    project_bucket: "{{ lookup('env','PROJECT_BUCKET') }}"
+    #project_bucket: "{{ lookup('env','PROJECT_BUCKET') }}"
   environment:
     CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
   tasks:
@@ -31,8 +31,7 @@
       shell: "source /etc/environment; python3 /scripts/utilities/py_utilities/consul_kv.py initialize-project-metadata"
       args:
         executable: /bin/bash
-    - name: "creating cloud-store bucket for project"
-      shell: "python3 /scripts/utilities/py_utilities/gcloud_storage.py create-bucket {{ project_bucket }}"
+    #  shell: "python3 /scripts/utilities/py_utilities/gcloud_storage.py create-bucket {{ project_bucket }}"
 
 
 - hosts: hashi_servers:hashi_clients:traefik:vault_servers
