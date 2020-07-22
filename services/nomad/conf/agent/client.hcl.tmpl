@@ -60,6 +60,11 @@ plugin "docker" {
 }
 # more caps listed here: https://man7.org/linux/man-pages/man7/capabilities.7.html
 
+plugin "raw_exec" {
+  config {
+    enabled = true
+  }
+}
 
 # consider using this to store global config values in consul kv: https://github.com/breser/git2consul
 # and the opposite, write files based on kv store: https://github.com/cimpress-mcp/fsconsul
