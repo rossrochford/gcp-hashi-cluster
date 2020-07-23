@@ -32,7 +32,7 @@ if [[ -z $NEW_INSTANCE_NAMES ]]; then
 fi
 
 
-python3 utilities/py_utilities/render_config_templates.py "ansible" $NEW_INSTANCE_NAMES
+python3 /scripts/utilities/py_utilities/render_config_templates.py "ansible" $NEW_INSTANCE_NAMES
 
 
 run_playbook consul place-tls-certs.yml
@@ -55,4 +55,4 @@ run_playbook consul set-agent-tokens-for-shell.yml
 
 
 # re-render ansible auth.ccp.yml without 'new_hashi_clients' group
-python3 utilities/py_utilities/render_config_templates.py "ansible"
+python3 /scripts/utilities/py_utilities/render_config_templates.py "ansible"

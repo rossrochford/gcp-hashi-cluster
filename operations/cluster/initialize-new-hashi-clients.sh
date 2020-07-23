@@ -11,6 +11,8 @@ fi
 
 REPO_DIRECTORY=$(readlink --canonicalize ..)
 PROJECT_INFO=$(cat "$REPO_DIRECTORY/build/conf/project-info.json")
+CLUSTER_PROJECT_ID=$(echo $PROJECT_INFO | jq -r ".cluster_service_project_id")
+CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE=$(echo $PROJECT_INFO | jq -r ".cluster_tf_service_account_ssh_private_key_filepath")
 
 
 CONSUL_BOOTSTRAP_TOKEN=$1
@@ -40,4 +42,4 @@ gcloud compute ssh $INSTANCE_NAME \
   --tunnel-through-iap \
   --project $CLUSTER_PROJECT_ID \
   --ssh-key-file=$CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE \
-  --command="cd /scripts/operations/ansible; ./initialize_new_hashi_cluster.sh $CONSUL_BOOTSTRAP_TOKEN $GOSSIP_ENCRYPTION_KEY $NEW_INSTANCE_NAMES"
+  --command="cd /scripts/operations/ansible; ./initialize_new_hashi_clients.sh $CONSUL_BOOTSTRAP_TOKEN $GOSSIP_ENCRYPTION_KEY $NEW_INSTANCE_NAMES"
