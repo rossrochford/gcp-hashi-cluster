@@ -117,10 +117,21 @@ resource "google_compute_security_policy" "traefik-security-policy" {
         priority = "1007"
         match {
             expr {
-              expression = "request.method == \"POST\" && request.path.matches('^/v1/node/.+/drain')"
+              expression = "request.method == \"POST\" && request.path.matches('^/v1/node/[^/]+/drain')"
             }
         }
         description = "Allow Nomad UI to drain nodes"
+    }
+
+    rule {
+        action   = "allow"
+        priority = "1008"
+        match {
+            expr {
+              expression = "request.method == \"POST\" && request.path.matches('^/v1/node/[^/]+/eligibility')"
+            }
+        }
+        description = "Allow Nomad UI to change node eligibility"
     }
 
     rule {
