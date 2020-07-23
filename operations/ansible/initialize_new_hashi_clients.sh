@@ -34,8 +34,24 @@ fi
 
 python3 /scripts/utilities/py_utilities/render_config_templates.py "ansible" $NEW_INSTANCE_NAMES
 
+if [[ $(check_exists "file" "/scripts/operations/ansible/auth.gcp.yml") == "no" ]]; then
+  ln -s /scripts/build/ansible/auth.gcp.yml /scripts/operations/ansible/auth.gcp.yml
+fi
+
+if [[ $(check_exists "file" "/scripts/operations/ansible/ansible.cfg") == "no" ]]; then
+  ln -s /scripts/build/ansible/ansible.cfg /scripts/operations/ansible/ansible.cfg
+fi
+
+
+# create and place TLS certs
+# ----------------------------
+/scripts/services/consul/init/create_tls_certs-new_clients.sh $NEW_INSTANCE_NAMES
 
 run_playbook consul place-tls-certs.yml
+
+rm -f /etc/consul.d/dc1-client-consul-0.pem
+rm -f /etc/consul.d/dc1-client-consul-0-key.pem
+
 
 
 run_playbook consul set-client-agent-tokens.yml
@@ -45,7 +61,6 @@ run_playbook consul start-client-agents.yml
 
 sleep 15
 run_playbook consul register-nodes-with-consul-kv.yml
-
 
 
 run_playbook nomad initialize-nomad.yml

@@ -15,10 +15,13 @@ cd /etc/collected-keys
 
 
 sudo gcloud kms decrypt --plaintext-file="./sa-ssh-key.pub" --ciphertext-file="./sa-ssh-key.pub.enc" --key=$KMS_KEY --keyring=$KMS_KEYRING --location=$REGION
+sudo chmod 400 sa-ssh-key.pub
 
 sudo gcloud kms decrypt --plaintext-file="./sa-ssh-key" --ciphertext-file="./sa-ssh-key.enc" --key=$KMS_KEY --keyring=$KMS_KEYRING --location=$REGION
+sudo chmod 400 sa-ssh-key
 
 sudo gcloud kms decrypt --plaintext-file="./sa-credentials.json" --ciphertext-file="./sa-credentials.json.enc" --key=$KMS_KEY --keyring=$KMS_KEYRING --location=$REGION
+sudo chmod 400 sa-credentials.json
 
 
 sudo rm *.enc

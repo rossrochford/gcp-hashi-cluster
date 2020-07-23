@@ -23,7 +23,7 @@
         src: "/etc/consul.d/tls-certs-new/dc1-server-consul-{{ current_ip }}.pem"
         dest: "/etc/consul.d/tls-certs/dc1-server-consul.pem"
 
-    - shell: "chown --recursive consul:consul /etc/consul.d/tls-certs; chmod 640 /etc/consul.d/tls-certs/*"
+    - shell: "chown --recursive consul:consul /etc/consul.d/tls-certs; chmod 400 /etc/consul.d/tls-certs/*"
 
 
 - hosts: hashi_clients:traefik:vault_servers
@@ -46,7 +46,7 @@
         src: "/etc/consul.d/tls-certs-new/dc1-client-consul-0.pem"
         dest: "/etc/consul.d/tls-certs/dc1-client-consul.pem"
 
-    - shell: "chown --recursive consul:consul /etc/consul.d/tls-certs; chmod 640 /etc/consul.d/tls-certs/*"
+    - shell: "chown --recursive consul:consul /etc/consul.d/tls-certs; chmod 400 /etc/consul.d/tls-certs/*"
 
 
 # retain the CA private key only on one machine, it's necessary for creating future certs

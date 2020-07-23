@@ -42,4 +42,4 @@ gcloud compute ssh $INSTANCE_NAME \
   --tunnel-through-iap \
   --project $CLUSTER_PROJECT_ID \
   --ssh-key-file=$CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE \
-  --command="cd /scripts/operations/ansible; ./initialize_new_hashi_clients.sh $CONSUL_BOOTSTRAP_TOKEN $GOSSIP_ENCRYPTION_KEY $NEW_INSTANCE_NAMES"
+  --command="cd /scripts/operations/ansible; sudo ./initialize_new_hashi_clients.sh $CONSUL_BOOTSTRAP_TOKEN $GOSSIP_ENCRYPTION_KEY $NEW_INSTANCE_NAMES"
