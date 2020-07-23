@@ -1,0 +1,11 @@
+---
+- hosts: new_hashi_clients
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  serial: 1
+  any_errors_fatal: true
+  become: yes
+  become_method: sudo
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+  tasks:
+    - shell: "/scripts/services/consul/init/set_agent_token_client.sh {{ consul_bootstrap_token }}"

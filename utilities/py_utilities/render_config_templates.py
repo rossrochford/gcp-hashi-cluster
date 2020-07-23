@@ -21,7 +21,9 @@ FILES = {
         '/scripts/services/consul/acl/policies/shell_policies/read_only_policy.hcl',
         '/scripts/services/consul/acl/policies/shell_policies/traefik_shell_policy.hcl'
     ],
-    'ansible': ['/scripts/build/ansible/auth.gcp.yml'],
+    'ansible': [
+        ('/scripts/build/ansible/auth.gcp.yml.tmpl', '/scripts/build/ansible/auth.gcp.yml')
+    ],
 
     'traefik': [
         ('/scripts/services/traefik/conf/traefik-consul-service.json.tmpl', '/etc/traefik/traefik-consul-service.json'),
@@ -41,7 +43,9 @@ def do_template_render(template_fp, json_data):
     return template.render(**json_data)
 
 
-def render_templates(service, files):
+def render_templates(service, extra_args):
+
+    files = FILES[service]
 
     if service == 'traefik':
         consul_cli = ConsulCli()
@@ -53,6 +57,10 @@ def render_templates(service, files):
     else:
         with open('/etc/node-metadata.json') as f:
             data = json.loads(f.read())
+
+    if service == 'ansible':
+        # comma-separated list of instance names
+        data['new_hashi_clients'] = extra_args[0].split(',') if extra_args else []
 
     for filepath in files:
         target_path = filepath
@@ -67,8 +75,9 @@ def render_templates(service, files):
 
 if __name__ == '__main__':
     service = sys.argv[1]
+    extra_args = sys.argv[2:]
 
     if service not in FILES:
         exit('unexpected service name: "%s"' % service)
 
-    render_templates(service, FILES[service])
+    render_templates(service, extra_args)

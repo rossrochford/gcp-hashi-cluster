@@ -12,8 +12,8 @@ job "traefik" {
       driver = "docker"
 
       config {
-        image = "registry.hub.docker.com/library/traefik:v2.2.5"
-        network_mode = "host"
+        image = "registry.hub.docker.com/library/traefik:v2.2.7"
+        network_mode = "host"  # or can set this in network stanza below?
 
         auth {
           server_address = "hub.docker.com"

@@ -1,0 +1,9 @@
+---
+
+- hosts: new_hashi_clients
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  serial: 1
+  become: yes
+  become_method: sudo
+  tasks:
+    - shell: "systemctl enable consul-client.service; systemctl start consul-client.service"

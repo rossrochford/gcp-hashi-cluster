@@ -1,0 +1,27 @@
+---
+
+- hosts: new_hashi_clients
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  serial: 1
+  any_errors_fatal: true
+  become: yes
+  become_method: sudo
+  tasks:
+    - shell: "/scripts/utilities/docker/pull-docker-images.sh"
+    - shell: "docker pull envoyproxy/envoy:v1.11.2@sha256:a7769160c9c1a55bb8d07a3b71ce5d64f72b1f665f10d81aa1581bc3cf850d09"
+    - shell: "docker pull envoyproxy/envoy:v1.14.2"
+
+
+- hosts: new_hashi_clients
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  any_errors_fatal: true
+  become: yes
+  become_method: sudo
+  vars:
+    consul_bootstrap_token: "{{ lookup('env','CONSUL_BOOTSTRAP_TOKEN') }}"
+    vault_server_1_ip: "{{ lookup('env','VAULT_IP_ADDR_1') }}"
+  environment:
+    CONSUL_HTTP_TOKEN: "{{ consul_bootstrap_token }}"
+  tasks:
+    - shell: "/scripts/services/nomad/init/setup_nomad_client.sh {{ vault_server_1_ip }}"
+    - shell: "systemctl enable nomad-client.service; systemctl start nomad-client.service"

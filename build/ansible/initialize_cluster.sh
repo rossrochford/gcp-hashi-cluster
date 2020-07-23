@@ -6,7 +6,6 @@ NODE_IP=$(ip route get 8.8.8.8 | awk '{print $7; exit}')
 
 export PROJECT_INFO=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info)
 
-export PROJECT_BUCKET=$(echo $PROJECT_INFO | jq -r ".project_bucket")
 export ANSIBLE_REMOTE_USER=$USER
 export CLUSTER_PROJECT_ID=$(echo $PROJECT_INFO | jq -r ".cluster_service_project_id")
 
@@ -15,7 +14,7 @@ NOMAD_VAULT_TOKENS_FILEPATH="/tmp/ansible-data/nomad-vault-tokens.json"
 
 
 run_playbook () {
-
+  # assumed to run from dir: /scripts/build/ansible
   ansible-playbook -i ./auth.gcp.yml "playbooks/init/$1/$2" \
     --extra-vars="ansible_ssh_private_key_file=/etc/collected-keys/sa-ssh-key"
 
@@ -156,5 +155,6 @@ echo "consul bootstrap token:                         $CONSUL_BOOTSTRAP_TOKEN"
 
 echo "consul UI token (read/write):                   $CONSUL_UI_TOKEN_RW"
 echo "consul UI token (read-only):                    $CONSUL_UI_TOKEN_RO"
+echo "consul gossip encryption key:                   $GOSSIP_ENCRYPTION_KEY"
 
 echo "vault root token:                               $VAULT_ROOT_TOKEN"

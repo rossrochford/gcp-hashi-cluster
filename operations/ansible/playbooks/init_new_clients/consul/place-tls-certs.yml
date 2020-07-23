@@ -1,0 +1,23 @@
+---
+
+- hosts: new_hashi_clients
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  any_errors_fatal: true
+  become: yes
+  become_method: sudo
+  tasks:
+    - shell: "mkdir -p /etc/consul.d/tls-certs/"
+
+    - copy:
+        src: "/etc/consul.d/tls-certs-new/consul-agent-ca.pem"
+        dest: "/etc/consul.d/tls-certs/consul-agent-ca.pem"
+
+    - copy:
+        src: "/etc/consul.d/tls-certs-new/dc1-client-consul-0-key.pem"
+        dest: "/etc/consul.d/tls-certs/dc1-client-consul-key.pem"
+
+    - copy:
+        src: "/etc/consul.d/tls-certs-new/dc1-client-consul-0.pem"
+        dest: "/etc/consul.d/tls-certs/dc1-client-consul.pem"
+
+    - shell: "chown --recursive consul:consul /etc/consul.d/tls-certs; chmod 640 /etc/consul.d/tls-certs/*"

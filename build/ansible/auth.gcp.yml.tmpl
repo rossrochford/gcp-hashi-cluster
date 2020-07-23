@@ -14,6 +14,9 @@ groups:
   traefik: "(labels.node_type) == 'traefik'"
   vault_servers: "(labels.node_type) == 'vault'"
   vault_server_1: "name == 'vault-server-1'"
+  {% if new_hashi_clients %}
+  new_hashi_clients: "name in ({% for nm in new_hashi_clients %}'{{ nm }}'{% if not loop.last %}, {% endif %})"
+  {% endif %}
 
 hostnames:
   - private_ip
