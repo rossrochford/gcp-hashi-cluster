@@ -1,0 +1,16 @@
+#!/bin/bash
+
+
+CLUSTER_PROJECT_TF_SA_EMAIL=$1
+CLUSTER_PROJECT_VM_SA_EMAIL=$2
+CLUSTER_PROJECT_ID=$3
+REGION=$4
+PROJECT_BUCKET_NAME=$5
+
+
+gsutil mb -p $CLUSTER_PROJECT_ID -c "STANDARD" -l $REGION -b on "gs://$PROJECT_BUCKET_NAME/"
+
+
+gsutil iam ch "serviceAccount:$CLUSTER_PROJECT_TF_SA_EMAIL:objectAdmin" "gs://$PROJECT_BUCKET_NAME"
+
+gsutil iam ch "serviceAccount:$CLUSTER_PROJECT_VM_SA_EMAIL:objectViewer" "gs://$PROJECT_BUCKET_NAME"

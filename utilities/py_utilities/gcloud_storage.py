@@ -2,6 +2,8 @@ import sys
 
 from google.cloud import storage
 
+from py_utilities.util import get_project_info
+
 
 def create_bucket(bucket_name):
     storage_client = storage.Client()
@@ -11,8 +13,13 @@ def create_bucket(bucket_name):
         print('success')
         return
 
+    project_info = get_project_info()
+    region = project_info['region'].upper()
+
     try:
-        bucket = storage_client.create_bucket(bucket_name)
+        bucket = storage_client.create_bucket(
+            bucket_name, location=region
+        )
     except:
         print('failed')
         return

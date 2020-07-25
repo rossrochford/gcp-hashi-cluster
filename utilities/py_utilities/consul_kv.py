@@ -2,11 +2,12 @@ import json
 import os
 import socket
 import sys
-import syslog
 import time
 
 import consul
 import requests
+
+from py_utilities.util import log_error, get_project_info
 
 
 CTN_PREFIX = os.environ['CTN_PREFIX']
@@ -30,17 +31,6 @@ def _get_consul_token_from_env():
     return env_variables.get('CONSUL_HTTP_TOKEN')
 
 
-def _get_project_info():
-    resp = requests.get(
-        'http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info',
-        headers={'Metadata-Flavor': 'Google'}
-    )
-    if resp.status_code != 200:
-        _log_error('error: failed to retrieve project-info from computeMetadata')
-        return None
-    return resp.json()
-
-
 def _get_instance_name():
     if RUN_ENV == 'dev':
         return socket.gethostname()
@@ -50,7 +40,7 @@ def _get_instance_name():
         headers={'Metadata-Flavor': 'Google'}
     )
     if resp.status_code != 200:
-        _log_error('error: failed to retrieve project-info from computeMetadata')
+        log_error('error: failed to retrieve project-info from computeMetadata')
         exit(1)
     return resp.content.decode()
 
@@ -107,11 +97,6 @@ class ConsulCli(object):
             time.sleep(1)
 
 
-def _log_error(st):
-    print(st)
-    syslog.syslog(syslog.LOG_ERR, st)
-
-
 def acquire_project_metadata_lock(func):
     # could use this, but it isn't being maintained: https://github.com/kurtome/python-consul-lock
     def inner_func(*args, **kwargs):
@@ -121,7 +106,7 @@ def acquire_project_metadata_lock(func):
         ans = None
         success = cli.acquire(PROJECT_METADATA_LOCK)
         if success is False:
-            _log_error('failed to acquire project lock: %s' % cli.lock_session_id)
+            log_error('failed to acquire project lock: %s' % cli.lock_session_id)
             exit(1)
 
         exception_thrown = False
@@ -129,7 +114,7 @@ def acquire_project_metadata_lock(func):
             ans = func(*args, **kwargs)
         except:
             exception_thrown = True
-            _log_error('error: exception thrown by %s' % func.__name__)
+            log_error('error: exception thrown by %s' % func.__name__)
         finally:
             cli.kv.put(PROJECT_METADATA_LOCK, None, release=cli.lock_session_id)
         if exception_thrown:
@@ -146,7 +131,7 @@ def initialize_project_metadata(cli):
     }
     cli.kv.put(PROJECT_METADATA_KEY, json.dumps(initial_data))
 
-    project_info = _get_project_info()
+    project_info = get_project_info()
     if project_info:
         cli.kv.put(CTP_PREFIX + '/project-id', project_info['cluster_service_project_id'])
         cli.kv.put(CTP_PREFIX + '/region', project_info['region'])
@@ -252,7 +237,7 @@ def append_traefik_service_routes(route_data_or_filepath):
             di['local_bind_port'] = available_ports.pop(0)
         except IndexError:
             # should never get here as long as we never exceed 1500 routes
-            _log_error('no more ports available in range 3000-4500')
+            log_error('no more ports available in range 3000-4500')
             exit(1)
 
         cli.kv.put('traefik-service-routes/' + di['service_name'], json.dumps(di))
@@ -297,7 +282,7 @@ def overwrite_traefik_service_routes(cli, route_data_filepath):
                 port = available_sidecar_ports.pop(0)
             except IndexError:
                 # should never get here as long as we never exceed 1500 routes
-                _log_error('no more ports available in range 3000-4500')
+                log_error('no more ports available in range 3000-4500')
                 exit(1)
 
             di = {'consul_service_name': consul_service, 'local_bind_port': port}

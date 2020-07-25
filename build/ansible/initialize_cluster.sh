@@ -22,7 +22,6 @@ run_playbook () {
     log_write "critical" "playbook $1/$2 failed, exiting initialize_cluster.sh"
     exit 1
   fi
-
 }
 
 

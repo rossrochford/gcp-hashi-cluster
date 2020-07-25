@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 IMAGE_NAME=$1
 
 if [[ -z $IMAGE_NAME ]]; then
@@ -28,6 +29,14 @@ if [[ $IMAGE_NAME != $EXPECTED_PREFIX* ]]; then
 fi
 
 
+get_instance_zone () {
+  INSTANCE_ZONE=$(gcloud compute instances list --filter="name:$1" --project=$CLUSTER_PROJECT_ID --format="value(ZONE)" --limit=1)
+  if [[ -z $INSTANCE_ZONE ]]; then
+    echo "no instance $1 found"; exit 1
+  fi
+  echo $INSTANCE_ZONE
+}
+
 # authenticate docker for private registry and push image
 # -----------------------------------------------------------
 gcloud auth print-access-token --project $CLUSTER_PROJECT_ID | docker login -u oauth2accesstoken --password-stdin "https://$CONTAINER_REGISTRY_HOSTNAME"
@@ -43,8 +52,8 @@ fi
 # ---------------------------------------------------------------------------------------
 
 INSTANCE_NAME="hashi-server-1"
-INSTANCE_ZONE=$(gcloud compute instances  describe $INSTANCE_NAME --project $CLUSTER_PROJECT_ID --format="value(zone)")
 
+INSTANCE_ZONE=$(get_instance_zone $INSTANCE_NAME)
 
 gcloud compute ssh $INSTANCE_NAME \
   --zone=$INSTANCE_ZONE \

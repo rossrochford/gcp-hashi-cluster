@@ -15,10 +15,6 @@ CLUSTER_PROJECT_ID=$(echo $PROJECT_INFO | jq -r ".cluster_service_project_id")
 CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE=$(echo $PROJECT_INFO | jq -r ".cluster_tf_service_account_ssh_private_key_filepath")
 
 
-#INSTANCE_NAME="hashi-server-1"
-#INSTANCE_ZONE=$(gcloud compute instances list --filter="name:$INSTANCE_NAME" --project=$CLUSTER_PROJECT_ID --format="value(zone)")
-# INSTANCE_ZONE=$(gcloud compute instances  describe $INSTANCE_NAME --project $CLUSTER_PROJECT_ID --format="value(zone)")
-
 INSTANCE_INFO=$(gcloud compute instances list --filter="tags.items:traefik-server" --project=$CLUSTER_PROJECT_ID --format="csv[no-heading](NAME,ZONE)" --limit=1)
 
 if [[ -z $INSTANCE_INFO ]]; then

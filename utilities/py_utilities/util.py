@@ -1,4 +1,7 @@
 import subprocess
+import syslog
+
+import requests
 
 
 def sys_call(cmd_str, shell=True, suppress_errors=True, print_stdout=False):
@@ -18,3 +21,19 @@ def sys_call(cmd_str, shell=True, suppress_errors=True, print_stdout=False):
                 print(line_err.decode())
 
     return proc.stdout.read().decode(), proc.stderr.read().decode()
+
+
+def log_error(st):
+    print(st)
+    syslog.syslog(syslog.LOG_ERR, st)
+
+
+def get_project_info():
+    resp = requests.get(
+        'http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info',
+        headers={'Metadata-Flavor': 'Google'}
+    )
+    if resp.status_code != 200:
+        log_error('error: failed to retrieve project-info from computeMetadata')
+        return None
+    return resp.json()

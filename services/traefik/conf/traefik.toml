@@ -9,7 +9,7 @@
 [accessLog]
   filePath = "/etc/traefik/access.log"
   bufferingSize = 40  # buffer of 40 lines
-  format = "json"
+  # format = "json"
 
 
 # removing for now until port issue is resolved

@@ -183,6 +183,10 @@ fi
 ./scripts/6-create-kms-keys.sh $CLUSTER_PROJECT_TF_SA_EMAIL $CLUSTER_PROJECT_ID $REGION $KMS_KEYRING $KMS_KEY
 
 
+# add storage bucket for project
+./scripts/7-create-storage-buckets.sh $CLUSTER_PROJECT_TF_SA_EMAIL $CLUSTER_PROJECT_VM_SA_EMAIL $CLUSTER_PROJECT_ID $REGION $PROJECT_BUCKET
+
+
 LB_PUBLIC_IP_NAME=$(echo $DEFAULTS | jq -r ".lb_public_ip_name")
 LB_PUBLIC_IP_ADDRESS=$(gcloud compute addresses describe $LB_PUBLIC_IP_NAME --global --format="get(address)" --project $CLUSTER_PROJECT_ID)
 

@@ -14,23 +14,14 @@ PROJECT_INFO=$(cat "$REPO_DIRECTORY/build/conf/project-info.json")
 CLUSTER_PROJECT_ID=$(echo $PROJECT_INFO | jq -r ".cluster_service_project_id")
 CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE=$(echo $PROJECT_INFO | jq -r ".cluster_tf_service_account_ssh_private_key_filepath")
 
+FILEPATH=$1
 
-CONSUL_BOOTSTRAP_TOKEN=$1
-GOSSIP_ENCRYPTION_KEY=$2
-NEW_INSTANCE_NAMES=$3
-
-
-if [[ -z $CONSUL_BOOTSTRAP_TOKEN ]]; then
-  echo "CONSUL_BOOTSTRAP_TOKEN argument not provided"; exit 1
+if [ ! -f $FILEPATH ]; then
+    echo "error: $FILEPATH doesn't exist"; exit 1
 fi
 
-if [[ -z $GOSSIP_ENCRYPTION_KEY ]]; then
-  echo "GOSSIP_ENCRYPTION_KEY argument not provided"; exit 1
-fi
+FILENAME=$(echo $FILEPATH | grep -o '[^/]*$')
 
-if [[ -z $NEW_INSTANCE_NAMES ]]; then
-  echo "NEW_INSTANCE_NAMES argument not provided"; exit 1
-fi
 
 get_instance_zone () {
   INSTANCE_ZONE=$(gcloud compute instances list --filter="name:$1" --project=$CLUSTER_PROJECT_ID --format="value(ZONE)" --limit=1)
@@ -40,13 +31,18 @@ get_instance_zone () {
   echo $INSTANCE_ZONE
 }
 
-INSTANCE_NAME="hashi-server-1"
-INSTANCE_ZONE=$(get_instance_zone $INSTANCE_NAME)
 
+# arguments 2, 3, 4 etc are GCP instance names
+for INSTANCE_NAME in "${@:2}"
+do
+  echo "uploading $FILEPATH to: $INSTANCE_NAME"
 
-gcloud compute ssh $INSTANCE_NAME \
-  --zone=$INSTANCE_ZONE \
-  --tunnel-through-iap \
-  --project $CLUSTER_PROJECT_ID \
-  --ssh-key-file=$CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE \
-  --command="cd /scripts/operations/ansible; sudo ./initialize_new_hashi_clients.sh $CONSUL_BOOTSTRAP_TOKEN $GOSSIP_ENCRYPTION_KEY $NEW_INSTANCE_NAMES"
+  INSTANCE_ZONE=$(get_instance_zone $INSTANCE_NAME)
+
+  gcloud compute scp $FILEPATH \
+      "$INSTANCE_NAME:/tmp/$FILENAME" \
+      --project $CLUSTER_PROJECT_ID \
+      --zone $INSTANCE_ZONE \
+      --tunnel-through-iap \
+      --ssh-key-file=$CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE
+done
