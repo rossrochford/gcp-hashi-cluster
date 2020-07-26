@@ -61,7 +61,7 @@
     [http.services.{{ .Key }}]
       [http.services.{{ .Key }}.loadBalancer]
         [[http.services.{{ .Key }}.loadBalancer.servers]]
-            {{ with $d := .Value | parseJSON }}
-            url = "http://localhost:{{ $d.local_bind_port }}/"
-            {{ end }}
+        {{ range (.Value | parseJSON).service_addresses }}
+           url = "{{ . }}"
+        {{ end }}
   {{ end }}

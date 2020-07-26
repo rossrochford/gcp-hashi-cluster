@@ -23,6 +23,7 @@ RUN_ENV = "prod"
 
 
 def _get_consul_token_from_env():
+    # this is a hack for one of the ansible scripts
     with open('/etc/environment') as file:
         lines = [s.strip() for s in file.readlines()]
         env_variables = dict([tuple(s.split('=')) for s in lines])
@@ -176,25 +177,6 @@ def register_node(cli):
     cli.kv.put(CTN_PREFIX + '/node-ip', node_ip)
 
 
-'''
-def get_available_traefik_sidecar_ports(existing_routes):
-
-    existing_routes = get_traefik_service_routes()
-
-    existing_ports = [di['local_bind_port'] for di in existing_routes]
-    existing_ports.sort()
-
-    max_port = 3000
-    if existing_routes:
-        max_port = max(existing_ports)
-
-    available_ports = [v for v in range(max_port+1, 4501)] + [
-        v for v in range(3000, max_port) if v not in existing_ports]
-
-    return available_ports
-'''
-
-
 def get_available_traefik_sidecar_ports(cli):
 
     existing_sidecars = get_traefik_sidecar_upstreams(cli)
@@ -214,69 +196,55 @@ def fire_event(cli, name, body=""):
     cli.event.fire(name, body="")
 
 
-'''
-@acquire_project_metadata_lock
-def append_traefik_service_routes(route_data_or_filepath):
+def _add_update_routes(
+    cli, route_data, existing_routes_by_name, existing_sidecars_by_name
+):
+    # add/update routes
+    for di in route_data['routes']:
+        if di['traefik_service_name'] in existing_routes_by_name:
+            if di == existing_routes_by_name[di['traefik_service_name']]:
+                continue  # no update required
 
-    if type(route_data_or_filepath) is str:
-        with open(route_data_or_filepath) as file:
-            route_data = json.loads(file.read())['routes']
-    else:
-        route_data = route_data_or_filepath
-
-    existing_routes = get_traefik_service_routes()
-    existing_routes_by_service_name = {
-        di['service_name']: di for di in existing_routes
-    }
-    available_ports = get_available_traefik_sidecar_ports(existing_routes)
-
-    for di in route_data:
-        if di['service_name'] in existing_routes_by_service_name:
+        if 'routing_rule' not in di:
+            print('no "routing_rule" found, skipping route for: %s' % di['consul_service_name'])
             continue
-        try:
-            di['local_bind_port'] = available_ports.pop(0)
-        except IndexError:
-            # should never get here as long as we never exceed 1500 routes
-            log_error('no more ports available in range 3000-4500')
-            exit(1)
 
-        cli.kv.put('traefik-service-routes/' + di['service_name'], json.dumps(di))
+        connect_enabled = di.get('connect_enabled', True)
+        middlewares = di.get('middlewares', [])
+        if 'source-ratelimit' in middlewares:
+            middlewares.append('source-ratelimit')
 
-    cli.event.fire("traefik-routes-updated")
-'''
+        if connect_enabled:
+            bind_port = existing_sidecars_by_name[di['consul_service_name']]['local_bind_port']
+            addresses = ['http://localhost:' + bind_port + '/']
+        else:
+            addresses = []
+            for nd in cli.catalog.service(di['consul_service_name'])[1]:
+                addr = 'http://' + nd['ServiceAddress'] + ':' + nd['ServicePort'] + '/'
+                addresses.append(addr)
+
+        di = {
+            'traefik_service_name': di['traefik_service_name'],
+            'consul_service_name': di['consul_service_name'],
+            'routing_rule': di['routing_rule'],
+            'middlewares': middlewares,
+            'connect_enabled': connect_enabled,
+            'service_addresses': addresses
+        }
+        key = 'traefik-service-routes/' + di['traefik_service_name']
+        cli.kv.put(key, json.dumps(di))
 
 
-@acquire_project_metadata_lock
-def overwrite_traefik_service_routes(cli, route_data_filepath):
-
-    existing_routes = get_traefik_service_routes(cli)
-    existing_sidecars = get_traefik_sidecar_upstreams(cli)
-    existing_routes_by_name = {di['traefik_service_name']: di for di in existing_routes}
-    existing_sidecars_by_name = {di['consul_service_name']: di for di in existing_sidecars}
-
-    with open(route_data_filepath) as file:
-        route_data = json.loads(file.read())
-
-    latest_routes = route_data['routes']
-    latest_routes_by_name = {di['traefik_service_name']: di for di in latest_routes}
-    latest_consul_services = [di['consul_service_name'] for di in latest_routes]
-
-    # find obsolete routes and sidecars
-    routes_to_remove, sidecars_to_remove = [], []
-    for di in existing_routes:
-        if di['traefik_service_name'] not in latest_routes_by_name:
-            routes_to_remove.append(di['traefik_service_name'])
-        if di['consul_service_name'] not in latest_consul_services:
-            sidecars_to_remove.append(di['consul_service_name'])
+def _add_sidecars(cli, route_data, existing_sidecars_by_name):
 
     available_sidecar_ports = get_available_traefik_sidecar_ports(cli)
 
     # add sidecar upstreams and gather ports
     for di in route_data['routes']:
         consul_service = di['consul_service_name']
-
-        # if consul_service in existing_sidecars_by_name:
-        #    sidecar_ports[consul_service] = existing_sidecars_by_name[consul_service]  # di['local_bind_port']
+        connect_enabled = di.get('connect_enabled', True)
+        if not connect_enabled:
+            continue
         if consul_service not in existing_sidecars_by_name:
             try:
                 port = available_sidecar_ports.pop(0)
@@ -292,29 +260,50 @@ def overwrite_traefik_service_routes(cli, route_data_filepath):
 
             existing_sidecars_by_name[consul_service] = di
 
-    # add/update routes
-    for di in route_data['routes']:
-        if di['traefik_service_name'] in existing_routes_by_name:
-            if di == existing_routes_by_name[di['traefik_service_name']]:
-                continue  # no update required
 
-        if 'routing_rule' not in di:
-            print('no "routing_rule" found, skipping route for: %s' % di['consul_service_name'])
-            continue
+@acquire_project_metadata_lock
+def append_traefik_service_routes(cli, route_data):
+    existing_routes = get_traefik_service_routes(cli)
+    existing_sidecars = get_traefik_sidecar_upstreams(cli)
+    existing_routes_by_name = {di['traefik_service_name']: di for di in existing_routes}
+    existing_sidecars_by_name = {di['consul_service_name']: di for di in existing_sidecars}
 
-        middlewares = di.get('middlewares', [])
-        if 'source-ratelimit' in middlewares:
-            middlewares.append('source-ratelimit')
+    _add_sidecars(cli, route_data, existing_sidecars_by_name)
+    _add_update_routes(
+        cli, route_data, existing_routes_by_name, existing_sidecars_by_name
+    )
 
-        di = {
-            'traefik_service_name': di['traefik_service_name'],
-            'consul_service_name': di['consul_service_name'],
-            'routing_rule': di['routing_rule'],
-            'middlewares': middlewares,
-            'local_bind_port': existing_sidecars_by_name[di['consul_service_name']]['local_bind_port'],
-        }
-        key = 'traefik-service-routes/' + di['traefik_service_name']
-        cli.kv.put(key, json.dumps(di))
+    cli.event.fire("traefik-routes-updated")
+
+
+@acquire_project_metadata_lock
+def overwrite_traefik_service_routes(cli, route_data_filepath):
+
+    with open(route_data_filepath) as file:
+        route_data = json.loads(file.read())
+
+    existing_routes = get_traefik_service_routes(cli)
+    existing_sidecars = get_traefik_sidecar_upstreams(cli)
+    existing_routes_by_name = {di['traefik_service_name']: di for di in existing_routes}
+    existing_sidecars_by_name = {di['consul_service_name']: di for di in existing_sidecars}
+
+    latest_routes = route_data['routes']
+    latest_routes_by_name = {di['traefik_service_name']: di for di in latest_routes}
+    latest_consul_services = [di['consul_service_name'] for di in latest_routes]
+
+    # find obsolete routes and sidecars
+    routes_to_remove, sidecars_to_remove = [], []
+    for di in existing_routes:
+        if di['traefik_service_name'] not in latest_routes_by_name:
+            routes_to_remove.append(di['traefik_service_name'])
+        if di['consul_service_name'] not in latest_consul_services:
+            sidecars_to_remove.append(di['consul_service_name'])
+
+    _add_sidecars(cli, route_data, existing_sidecars_by_name)
+
+    _add_update_routes(
+        cli, route_data, existing_routes_by_name, existing_sidecars_by_name
+    )
 
     # delete routes and sidecars
     for traefik_service_name in routes_to_remove:
