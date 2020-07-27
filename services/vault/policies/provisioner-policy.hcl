@@ -29,7 +29,21 @@ path "sys/policies/acl/*"
 }
 
 # List, create, update, and delete key/value secrets
-path "secret/*"
+path "secret/data/*"
 {
   capabilities = ["create", "read", "update", "delete", "list"]
+}
+
+# delete or destroy secret-versions
+path "secret/delete/*" {
+  capabilities = ["update"]
+}
+path "secret/destroy/*" {
+  capabilities = ["update"]
+}
+
+
+# list, view or delete metadata for secret-versions
+path "secret/metadata/*" {
+  capabilities = ["list", "read", "delete"]
 }

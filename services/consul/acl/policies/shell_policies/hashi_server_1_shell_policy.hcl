@@ -21,6 +21,14 @@ key_prefix "{{ ctp_prefix }}/metadata-lock" {
   policy = "write"
 }
 
+key_prefix "hashi-cluster-nodes/" {
+  policy = "deny"
+}
+
+key_prefix "{{ ctn_prefix }}/" {
+  policy = "write"
+}
+
 key_prefix "" {
    policy = "read"
 }

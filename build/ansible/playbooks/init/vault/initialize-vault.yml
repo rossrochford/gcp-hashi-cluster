@@ -13,7 +13,6 @@
   tasks:
     - name: "set mlock capability for vault"
       shell: "setcap cap_ipc_lock=+ep /usr/bin/vault"
-    #- name: "waiting for consul node health"
     #  shell: "python3 /scripts/utilities/py_utilities/consul_wait_for.py 'node-healthy' 90; sleep 2"
     - name: "create consul token for Vault"
       shell: "/scripts/services/vault/init/vault_consul_token_init.sh {{ consul_bootstrap_token }}"
@@ -51,6 +50,7 @@
         msg: "vault_root_token: {{ vault_root_token }}"
 
 
+# write the facts above to local files, a little hacky
 - hosts: 127.0.0.1
   connection: local
   tasks:

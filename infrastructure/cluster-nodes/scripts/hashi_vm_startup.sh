@@ -69,3 +69,9 @@ else
   echo "CONSUL_HTTP_ADDR=\"$NODE_IP:8500\"" >> /etc/environment
   echo "NOMAD_ADDR=\"http://$NODE_IP:4646\"" >> /etc/environment
 fi
+
+
+# todo: move to packer script
+apt install ntp
+cp /scripts/services/system-misc/ntp/ntp.conf /etc/ntp.conf
+service ntp reload

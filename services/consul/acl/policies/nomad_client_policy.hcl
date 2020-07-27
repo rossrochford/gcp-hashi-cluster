@@ -12,7 +12,7 @@ service_prefix "" {
   policy = "write"
 }
 
-# uncomment if using Consul KV with Consul Template
-# key_prefix "" {
-#   policy = read
-# }
+# set to read if using Consul KV with Consul Template in Nomad
+key_prefix "" {
+  policy = "deny"
+}

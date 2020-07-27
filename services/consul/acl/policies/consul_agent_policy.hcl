@@ -25,15 +25,19 @@ key_prefix "{{ ctp_prefix }}/" {
   policy = "write"
 }
 
+key_prefix "hashi-cluster-nodes/" {
+  policy = "deny"
+}
+
 key_prefix "{{ ctn_prefix }}/" {
   policy = "write"
 }
+
 
 # is this necessary for watches to work?
 event_prefix "" {
   policy = "read"
 }
-
 
 
 # traefik stuff
@@ -56,7 +60,6 @@ service_prefix "traefik" {
    policy = "write"
 }
 {% endif %}
-
 
 
 

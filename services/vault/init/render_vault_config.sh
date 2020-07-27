@@ -5,8 +5,7 @@ STATE=$1
 
 NODE_IP=$(ip route get 8.8.8.8 | awk '{print $7; exit}')
 
-if [[ "$STATE" == "initial" ]]
-  then
+if [[ $STATE == "initial" ]]; then
 
     consul kv put "$CTN_PREFIX/vault-config/api-addr" "http://$NODE_IP:8200"
     consul kv put "$CTN_PREFIX/vault-config/cluster-addr" "http://$NODE_IP:8201"
@@ -16,8 +15,7 @@ if [[ "$STATE" == "initial" ]]
     consul kv put "$CTN_PREFIX/vault-config/tls-cert-file" ""
     consul kv put "$CTN_PREFIX/vault-config/tls-key-file" ""
 
-elif [[ "$STATE" == "tls-certs-ready" ]]
-  then
+elif [[ $STATE == "tls-certs-ready" ]]; then
 
     consul kv put "$CTN_PREFIX/vault-config/api-addr" "https://$NODE_IP:8200"
     consul kv put "$CTN_PREFIX/vault-config/cluster-addr" "https://$NODE_IP:8201"

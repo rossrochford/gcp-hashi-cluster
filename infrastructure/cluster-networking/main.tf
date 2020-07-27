@@ -179,7 +179,7 @@ resource "google_compute_firewall" "consul-sidecar-fw-ingress" {
 
     allow {
         protocol = "tcp"
-        ports = ["21000-21255", "20000-32000"]
+        ports = ["21000-21255", "20000-32000"]  # todo: 20000-32000 should have a separate tag, its for Nomad not sidecars (https://www.nomadproject.io/docs/install/production/requirements)
     }
     source_ranges = [local.private_subnet_cidr_range]
 

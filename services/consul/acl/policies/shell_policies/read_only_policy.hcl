@@ -14,6 +14,14 @@ key_prefix "" {
    policy = "read"
 }
 
+key_prefix "hashi-cluster-nodes/" {
+  policy = "deny"
+}
+
+key_prefix "{{ ctn_prefix }}/" {
+  policy = "read"
+}
+
 session_prefix "" {
   policy = "read"
 }
