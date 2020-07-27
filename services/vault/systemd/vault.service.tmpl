@@ -7,9 +7,8 @@ After=network-online.target
 User=vault
 Group=vault
 
-#
-Environment=VAULT_ADDR={{ "/vault-config/vault-api-addr" | plugin "ctn" }}
-Environment=VAULT_API_ADDR={{ "/vault-config/vault-api-addr" | plugin "ctn" }}
+Environment=VAULT_ADDR={{ "/vault-config/api-addr" | plugin "ctn" }}
+Environment=VAULT_API_ADDR={{ "/vault-config/api-addr" | plugin "ctn" }}
 
 Environment=CONSUL_HTTP_TOKEN={{ "/vault-config/consul-http-token" | plugin "ctn" }}
 Environment=VAULT_CACERT={{ "/vault-config/ca-cert" | plugin "ctn" }}

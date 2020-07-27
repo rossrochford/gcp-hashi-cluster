@@ -1,12 +1,15 @@
 #!/bin/bash
 
 PROJECT_INFO=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info)
-NUM_HASHI_SERVERS=$(echo $DEFAULTS | jq -r ".num_hashi_servers")
+NUM_HASHI_SERVERS=$(echo $PROJECT_INFO | jq -r ".num_hashi_servers")
+
+mkdir -p /tmp/ansible-data
 
 
-vault operator init -key-shares=1 -key-threshold=1 -format=json > /tmp/vault-init-keys.json
+vault operator init -key-shares=1 -key-threshold=1 -format=json > /tmp/ansible-data/vault-init-keys.json
 
-ROOT_TOKEN=$(cat /tmp/vault-init-keys.json | jq -r ".root_token")
+ROOT_TOKEN=$(cat /tmp/ansible-data/vault-init-keys.json | jq -r ".root_token")
+export VAULT_TOKEN="$ROOT_TOKEN"
 
 vault login $ROOT_TOKEN
 
@@ -15,11 +18,11 @@ vault secrets enable -version=2 -path=kv kv
 vault auth enable gcp
 
 
-# vault policy write nomad-cluster /scripts/services/vault/policies/nomad-cluster-policy.hcl
-# vault write auth/gcp/role/nomad-cluster type="gce" policies="nomad-cluster" bound_projects="<my-project>"
-
 
 vault policy write nomad-server /scripts/services/vault/policies/nomad-server-policy.hcl
+
+# tokens generated for Nomad tasks will be allowed this policy (see "allowed_policies" in nomad-cluster-role.json)
+vault policy write nomad-client-base /scripts/services/vault/policies/nomad-client-base-policy.hcl
 
 
 # Create the token role with Vault. This manages which Vault policies are accessible by Nomad jobs.
@@ -28,12 +31,6 @@ vault write /auth/token/roles/nomad-cluster @/scripts/services/vault/roles/nomad
 # Warning: never add "nomad-server" to allowed_policies, otherwise Nomad tasks will be able to generate new tokens with any policy.
 
 
-# tokens generated for Nomad tasks will be allowed this policy (see "allowed_policies" in nomad-cluster-role.json)
-vault policy write nomad-client-base /scripts/services/vault/policies/nomad-client-base-policy.hcl
-
-
-export VAULT_TOKEN="$ROOT_TOKEN"
-
 # create tokens and gather them into a json string
 TOKENS=""
 for ((n=0; n < $NUM_HASHI_SERVERS; n++)); do
@@ -41,7 +38,7 @@ for ((n=0; n < $NUM_HASHI_SERVERS; n++)); do
   TOKENS="$TOKENS $TK"
 done
 
-TOKENS_JSON=$(python -c '
+TOKENS_JSON=$(python3 -c '
 import json
 import sys
 tokens = [a for a in sys.argv[1:] if a.strip()]
