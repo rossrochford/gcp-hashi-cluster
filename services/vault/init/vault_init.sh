@@ -25,12 +25,10 @@ vault policy write nomad-server /scripts/services/vault/policies/nomad-server-po
 # Create the token role with Vault. This manages which Vault policies are accessible by Nomad jobs.
 # This role is also referenced in Nomad config at base.hcl.tmpl:vault.create_from_role (see: https://www.nomadproject.io/docs/configuration/vault/#create_from_role and https://www.nomadproject.io/docs/vault-integration/#retrieving-the-token-role-based-token)
 vault write /auth/token/roles/nomad-cluster @/scripts/services/vault/roles/nomad-cluster-role.json
-# We've set disallowed_policies to "nomad-server" to prevent tokens created by Nomad from generating new tokens
-# with different policies.
+# Warning: never add "nomad-server" to allowed_policies, otherwise Nomad tasks will be able to generate new tokens with any policy.
 
 
-# this policy be made available to the tokens created for Nomad tasks
-# this is implied by "disallowed_policies" in nomad-cluster-role.json
+# tokens generated for Nomad tasks will be allowed this policy (see "allowed_policies" in nomad-cluster-role.json)
 vault policy write nomad-client-base /scripts/services/vault/policies/nomad-client-base-policy.hcl
 
 
