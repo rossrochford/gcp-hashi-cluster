@@ -34,6 +34,8 @@ client {
 
   meta {
     node_type = "{{ "/node-type" | plugin "ctn" }}"
+    ctp_prefix = "{{ env "CTP_PREFIX" }}"
+    ctn_prefix = "{{ env "CTN_PREFIX" }}"
   }
 
 }

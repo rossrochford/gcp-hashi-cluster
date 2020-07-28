@@ -13,7 +13,7 @@ export VAULT_TOKEN="$ROOT_TOKEN"
 
 vault login $ROOT_TOKEN
 
-vault secrets enable -version=2 -path=kv kv
+vault secrets enable -path=secret kv-v2
 
 vault auth enable gcp
 

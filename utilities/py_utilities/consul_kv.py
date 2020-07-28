@@ -216,11 +216,11 @@ def _add_update_routes(
 
         if connect_enabled:
             bind_port = existing_sidecars_by_name[di['consul_service_name']]['local_bind_port']
-            addresses = ['http://localhost:' + bind_port + '/']
+            addresses = [f'http://localhost:{bind_port}/']
         else:
             addresses = []
             for nd in cli.catalog.service(di['consul_service_name'])[1]:
-                addr = 'http://' + nd['ServiceAddress'] + ':' + nd['ServicePort'] + '/'
+                addr = 'http://' + nd['ServiceAddress'] + ':' + str(nd['ServicePort']) + '/'
                 addresses.append(addr)
 
         di = {

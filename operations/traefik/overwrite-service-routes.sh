@@ -25,7 +25,10 @@ INSTANCE_NAME=$(echo $INSTANCE_INFO | cut -d',' -f1)
 INSTANCE_ZONE=$(echo $INSTANCE_INFO | cut -d',' -f2)
 
 
-gcloud compute scp "$REPO_DIRECTORY/operations/traefik/traefik-service-routes.json" \
+ROUTES_FILE=$1
+
+
+gcloud compute scp $ROUTES_FILE \
       "$INSTANCE_NAME:/tmp/traefik-service-routes.json" \
       --project $CLUSTER_PROJECT_ID \
       --zone $INSTANCE_ZONE \
@@ -38,4 +41,4 @@ gcloud compute ssh $INSTANCE_NAME \
   --tunnel-through-iap \
   --project $CLUSTER_PROJECT_ID \
   --ssh-key-file=$CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE \
-  --command="python3 /scripts/utilities/py_utilities/consul_kv.py overwrite-traefik-service-routes /tmp/traefik-service-routes.json"
+  --command="cd /scripts/utilities; python3 py_utilities/consul_kv.py overwrite-traefik-service-routes /tmp/traefik-service-routes.json"

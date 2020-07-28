@@ -5,13 +5,14 @@ After=network-online.target
 StartLimitInterval=180
 StartLimitBurst=18
 
+# note: VAULT_TOKEN isn't necessary on nomad clients:
+# https://www.nomadproject.io/docs/configuration/vault/#nomad-client
+
 [Service]
 User=root
 Environment=SYSTEMD_LOG_LEVEL=debug
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 Environment=NOMAD_ADDR=http://{{ "/node-ip" | plugin "ctn" }}:4646
-
-# VAULT_TOKEN isn't necessary on nomad clients: https://www.nomadproject.io/docs/configuration/vault/#nomad-client
 
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStart=/usr/local/bin/nomad agent -config="/etc/nomad.d/base.hcl" -config="/etc/nomad.d/client.hcl" -node={{ "/node-name" | plugin "ctn" }} -bind={{ "/node-ip" | plugin "ctn" }}
