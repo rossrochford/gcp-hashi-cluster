@@ -36,6 +36,8 @@
 - hosts: vault_server_1
   remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
   any_errors_fatal: true
+  become: yes
+  become_method: sudo
   environment:
     VAULT_ADDR: "http://127.0.0.1:8200"
   tasks:
