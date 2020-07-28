@@ -44,7 +44,7 @@
       register: "vault_init_result"
     - set_fact:
         vault_root_token: "{{ vault_init_result.stdout_lines[-3] }}"
-    - set_face:
+    - set_fact:
         writeonly_vault_token: "{{ vault_init_result.stdout_lines[-2] }}"
     - set_fact:
         nomad_vault_tokens_json: "{{ vault_init_result.stdout_lines[-1] }}"
