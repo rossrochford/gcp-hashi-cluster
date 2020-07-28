@@ -18,20 +18,21 @@ vault secrets enable -path=secret kv-v2
 vault auth enable gcp
 
 
-
+# allows Nomad to generate tokens for tasks
 vault policy write nomad-server /scripts/services/vault/policies/nomad-server-policy.hcl
 
-# tokens generated for Nomad tasks will be allowed this policy (see "allowed_policies" in nomad-cluster-role.json)
+# allows Nomad tasks to read secrets at /secret/data/nomad/*   (to add more capabilities see "allowed_policies" in nomad-cluster-role.json)
 vault policy write nomad-client-base /scripts/services/vault/policies/nomad-client-base-policy.hcl
-
-
-# Create the token role with Vault. This manages which Vault policies are accessible by Nomad jobs.
-# This role is also referenced in Nomad config at base.hcl.tmpl:vault.create_from_role (see: https://www.nomadproject.io/docs/configuration/vault/#create_from_role and https://www.nomadproject.io/docs/vault-integration/#retrieving-the-token-role-based-token)
-vault write /auth/token/roles/nomad-cluster @/scripts/services/vault/roles/nomad-cluster-role.json
+vault write /auth/token/roles/nomad-cluster @/scripts/services/vault/roles/nomad-cluster-role.json  # referenced in server.hcl:create_from_role
 # Warning: never add "nomad-server" to allowed_policies, otherwise Nomad tasks will be able to generate new tokens with any policy.
 
 
-# create tokens and gather them into a json string
+# allows a developer to write/update (but not read) secrets at: /secret/data/nomad/*
+vault policy write nomad-secret-writer /scripts/services/vault/policies/nomad-secret-writeonly-policy.hcl
+WRITEONLY_TOKEN=$(vault token create -policy nomad-secret-writer -period 72h -orphan -field=token)
+
+
+# create nomad-server tokens and gather them into a json string
 TOKENS=""
 for ((n=0; n < $NUM_HASHI_SERVERS; n++)); do
   TK=$(vault token create -policy nomad-server -period 72h -orphan -field=token)
@@ -48,4 +49,5 @@ print(json.dumps({"nomad_vault_tokens": tokens}))
 
 # echo tokens for ansible to capture
 echo $ROOT_TOKEN
+echo $WRITEONLY_TOKEN
 echo $TOKENS_JSON

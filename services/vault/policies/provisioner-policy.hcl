@@ -42,7 +42,6 @@ path "secret/destroy/*" {
   capabilities = ["update"]
 }
 
-
 # list, view or delete metadata for secret-versions
 path "secret/metadata/*" {
   capabilities = ["list", "read", "delete"]

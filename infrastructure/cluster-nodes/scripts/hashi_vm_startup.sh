@@ -63,7 +63,7 @@ chmod 0777 /tmp/ansible-data/
 if [[ "$NODE_TYPE" == "vault" ]]
   then
     echo "CONSUL_HTTP_ADDR=\"127.0.0.1:8500\"" >> /etc/environment
-    cp services/vault/vault_env.sh /etc/profile.d/vault_env.sh
+    cp services/vault/init/vault_env.sh /etc/profile.d/vault_env.sh
 else
   # these need to be set for the Consul and Nomad CLIs to work in ssh sessions
   echo "CONSUL_HTTP_ADDR=\"$NODE_IP:8500\"" >> /etc/environment

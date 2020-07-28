@@ -1,14 +1,12 @@
 # based on: https://learn.hashicorp.com/nomad/vault-integration/vault-postgres#write-a-policy-for-nomad-server-tokens
 
 
-# Allow creating tokens under "nomad-cluster" role. The role name should be
-# updated if "nomad-cluster" is not used.
+# Allow creating tokens under "nomad-cluster" role.
 path "auth/token/create/nomad-cluster" {
   capabilities = ["update"]
 }
 
-# Allow looking up "nomad-cluster" role. The role name should be updated if
-# "nomad-cluster" is not used.
+# Allow looking up "nomad-cluster" role.
 path "auth/token/roles/nomad-cluster" {
   capabilities = ["read"]
 }

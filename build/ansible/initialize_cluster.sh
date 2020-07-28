@@ -146,14 +146,19 @@ run_playbook traefik initialize-traefik.yml
 # ----------------------------------
 
 VAULT_ROOT_TOKEN=$(cat /tmp/ansible-data/vault-root-token.txt)
+VAULT_WRITEONLY_TOKEN=$(cat /tmp/ansible-data/vault-writeonly-token.txt)
 
 
 echo "-----------------------------------------------------------"
 
+echo ""
 echo "consul bootstrap token:                         $CONSUL_BOOTSTRAP_TOKEN"
-
-echo "consul UI token (read/write):                   $CONSUL_UI_TOKEN_RW"
-echo "consul UI token (read-only):                    $CONSUL_UI_TOKEN_RO"
 echo "consul gossip encryption key:                   $GOSSIP_ENCRYPTION_KEY"
 
+echo ""
+echo "consul UI token (read/write):                   $CONSUL_UI_TOKEN_RW"
+echo "consul UI token (read-only):                    $CONSUL_UI_TOKEN_RO"
+
+echo ""
 echo "vault root token:                               $VAULT_ROOT_TOKEN"
+echo "vault write-only token:                         $VAULT_WRITEONLY_TOKEN"

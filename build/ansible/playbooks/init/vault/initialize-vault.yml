@@ -43,11 +43,12 @@
       shell: "sleep 1; /scripts/services/vault/init/vault_init.sh"
       register: "vault_init_result"
     - set_fact:
-        vault_root_token: "{{ vault_init_result.stdout_lines[-2] }}"
+        vault_root_token: "{{ vault_init_result.stdout_lines[-3] }}"
+    - set_face:
+        writeonly_vault_token: "{{ vault_init_result.stdout_lines[-2] }}"
     - set_fact:
         nomad_vault_tokens_json: "{{ vault_init_result.stdout_lines[-1] }}"
-    - debug:
-        msg: "vault_root_token: {{ vault_root_token }}"
+
 
 
 # write the facts above to local files, a little hacky
@@ -57,6 +58,10 @@
     - copy:
         content: "{{ hostvars[item]['nomad_vault_tokens_json'] }}"
         dest: "/tmp/ansible-data/nomad-vault-tokens.json"
+      with_items: "{{ groups['vault_server_1'] }}"
+    - copy:
+        content: "{{ hostvars[item]['writeonly_vault_token'] }}"
+        dest: "/tmp/ansible-data/vault-writeonly-token.txt"
       with_items: "{{ groups['vault_server_1'] }}"
     - copy:
         content: "{{ hostvars[item]['vault_root_token'] }}"

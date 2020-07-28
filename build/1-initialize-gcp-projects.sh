@@ -93,6 +93,13 @@ if [[ "$NUM_HASHI_SERVERS" != "3" && "$NUM_HASHI_SERVERS" != "5" && "$NUM_HASHI_
 fi
 
 
+# validate python binary exists
+python -c "exit(0)" 2> /dev/null
+if [[ $? != 0 ]]; then
+  echo "error: python binary not found, try modifying this script to use python3?"; exit 1
+fi
+
+
 export REPO_DIRECTORY=$(readlink --canonicalize ..)
 
 PROJECT_INFO_FILEPATH="$REPO_DIRECTORY/build/conf/project-info.json"

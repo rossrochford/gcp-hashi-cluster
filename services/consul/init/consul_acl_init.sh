@@ -45,12 +45,12 @@ consul acl role create -name=traefik-shell-role -policy-name=traefik-shell-polic
 
 consul acl policy create -name nomad-server-policy -rules @acl/policies/nomad_server_policy.hcl
 consul acl role create -name=nomad-server-role -policy-name=nomad-server-policy
-# note: tokens are created in setup_nomad_server.sh
+# note: tokens are created in services/nomad/init/setup_nomad_server.sh
 
 
 consul acl policy create -name nomad-client-policy -rules @acl/policies/nomad_client_policy.hcl
 consul acl role create -name=nomad-client-role -policy-name=nomad-client-policy
-# note: tokens are created in setup_nomad_client.sh
+# note: tokens are created in services/nomad/init/setup_nomad_client.sh
 
 
 consul acl policy create -name vault-policy -rules @acl/policies/vault_policy.hcl
