@@ -49,9 +49,12 @@
     - set_fact:
         nomad_vault_tokens_json: "{{ vault_init_result.stdout_lines[-1] }}"
 
+    # add write-only token to /etc/environment on vault-server-1
+    - shell: "/scripts/services/vault/init/set_token_for_shell.sh {{ vault_init_result.stdout_lines[-2] }}"
 
 
-# write the facts above to local files, a little hacky
+
+# write the facts above to local files on the machine running this playbook, a little hacky
 - hosts: 127.0.0.1
   connection: local
   tasks:

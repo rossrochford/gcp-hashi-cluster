@@ -30,5 +30,5 @@ build/scripts/tls-certs/terraform.tfstate.backup
 operations/traefik/traefik-service-routes.json
 operations/traefik/traefik-service-routes.json.bak
 
-operations/vault/write-secrets.sh
+
 

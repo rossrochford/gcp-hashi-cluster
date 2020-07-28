@@ -4,10 +4,10 @@ import syslog
 import requests
 
 
-def sys_call(cmd_str, shell=True, suppress_errors=True, print_stdout=False):
+def sys_call(cmd_str, shell=True, print_stdout=False):
     proc = subprocess.Popen(
-        cmd_str, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE,
-        shell=shell
+        cmd_str, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        stdin=subprocess.PIPE, shell=shell
     )
 
     if print_stdout:

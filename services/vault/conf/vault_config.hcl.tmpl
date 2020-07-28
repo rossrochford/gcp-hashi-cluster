@@ -40,7 +40,7 @@ listener "tcp" {
 # according to this we can have multiple listeners: https://www.vaultproject.io/docs/configuration/listener/tcp#listening-on-multiple-interfaces
 listener "tcp" {
   address     = "127.0.0.1:8200"
-  tls_disable = "true"
+  tls_disable = 1
 }
 
 seal "gcpckms" {

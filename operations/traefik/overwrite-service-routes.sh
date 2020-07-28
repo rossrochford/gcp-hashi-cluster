@@ -1,5 +1,12 @@
 #!/bin/bash
 
+ROUTES_FILE=$1
+
+
+if [[ (-z $ROUTES_FILE) || (! -f $ROUTES_FILE) ]]; then
+  echo "error: ROUTES_FILE argument missing or file doesn't exit"; exit 1
+fi
+
 
 # validate working directory is: $REPO_DIRECTORY/operations/
 WORKING_DIRECTORY=$(readlink --canonicalize ".")
@@ -23,9 +30,6 @@ fi
 
 INSTANCE_NAME=$(echo $INSTANCE_INFO | cut -d',' -f1)
 INSTANCE_ZONE=$(echo $INSTANCE_INFO | cut -d',' -f2)
-
-
-ROUTES_FILE=$1
 
 
 gcloud compute scp $ROUTES_FILE \
