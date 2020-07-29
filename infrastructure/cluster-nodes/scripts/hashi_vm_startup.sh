@@ -4,9 +4,8 @@ NODE_IP=$(ip route get 8.8.8.8 | awk '{print $7; exit}')
 NODE_NAME=$(hostname)
 NODE_TYPE=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/node-type)
 export GCP_INSTANCE_ID=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/id)
-PROJECT_ID=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/project/project-id)
 PROJECT_INFO=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info)
-
+CLUSTER_PROJECT_ID=$(echo $PROJECT_INFO | jq -r ".cluster_service_project_id")
 
 cd /
 git clone https://github.com/rossrochford/gcp-hashi-cluster.git
@@ -19,7 +18,7 @@ git checkout dev  # todo: add branch name to project-info
 # project-wide and node-wide prefixes for storing metadata in Consul
 # "CTN: 'consul-template-node-prefix'  CTP: 'consul-template-project-prefix'
 export CTN_PREFIX="hashi-cluster-nodes/$NODE_NAME"
-export CTP_PREFIX="hashi-cluster-projects/$PROJECT_ID"
+export CTP_PREFIX="hashi-cluster-projects/$CLUSTER_PROJECT_ID"
 echo "CTN_PREFIX=\"$CTN_PREFIX\"" >> /etc/environment
 echo "CTP_PREFIX=\"$CTP_PREFIX\"" >> /etc/environment
 
@@ -72,6 +71,7 @@ fi
 
 
 # todo: move to packer script
-apt install ntp
-cp /scripts/services/system-misc/ntp/ntp.conf /etc/ntp.conf
-service ntp reload
+#apt install ntp
+#cp /scripts/services/system-misc/ntp/ntp.conf /etc/ntp.conf
+#service ntp reload
+#pip3 install invoke==1.4.1

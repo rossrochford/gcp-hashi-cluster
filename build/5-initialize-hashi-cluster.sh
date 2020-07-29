@@ -1,16 +1,13 @@
 #!/bin/bash
 
+if [[ -z $HASHI_REPO_DIRECTORY ]]; then
+  echo "error: HASHI_REPO_DIRECTORY env variable must be set"; exit 1
+fi
+
 
 WORKING_DIRECTORY=$(readlink --canonicalize ".")
 
-# validate working directory is: $REPO_DIRECTORY/build/
-if [[ "$WORKING_DIRECTORY" != *build && "$WORKING_DIRECTORY" != *build/ ]]; then
-  echo "error: working directory must be 'gcp-hashi-cluster/build/'"; exit 1
-fi
-
-export REPO_DIRECTORY=$(readlink --canonicalize ..)
-
-export PROJECT_INFO=$(cat "$REPO_DIRECTORY/build/conf/project-info.json")
+export PROJECT_INFO=$(cat "$HASHI_REPO_DIRECTORY/build/conf/project-info.json")
 
 CLUSTER_PROJECT_ID=$(echo $PROJECT_INFO | jq -r ".cluster_service_project_id")
 REGION=$(echo $PROJECT_INFO | jq -r ".region")
@@ -74,7 +71,7 @@ INSTANCE_ZONE=$(cat "./conf/gcp-locations.json" | jq -r ".zones_by_region[\"$REG
 # Encrypt and zip keys
 # ---------------------------------------------------------------------
 
-cd "$REPO_DIRECTORY/keys"
+cd "$HASHI_REPO_DIRECTORY/keys"
 mkdir -p /tmp/ansible-data/collected-keys/
 
 # note: there is a guide for doing this kind of thing, might be worth reading through it: https://cloud.google.com/kms/docs/encrypting-application-data

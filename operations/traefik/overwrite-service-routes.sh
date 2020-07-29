@@ -3,21 +3,16 @@
 ROUTES_FILE=$1
 
 
+if [[ -z $HASHI_REPO_DIRECTORY ]]; then
+  echo "error: HASHI_REPO_DIRECTORY env variable must be set"; exit 1
+fi
+
 if [[ (-z $ROUTES_FILE) || (! -f $ROUTES_FILE) ]]; then
   echo "error: ROUTES_FILE argument missing or file doesn't exit"; exit 1
 fi
 
 
-# validate working directory is: $REPO_DIRECTORY/operations/
-WORKING_DIRECTORY=$(readlink --canonicalize ".")
-
-if [[ $WORKING_DIRECTORY != *operations && $WORKING_DIRECTORY != *operations/ ]]; then
-  echo "error: working directory must be 'gcp-hashi-cluster/operations/'"; exit 1
-fi
-
-
-REPO_DIRECTORY=$(readlink --canonicalize ..)
-PROJECT_INFO=$(cat "$REPO_DIRECTORY/build/conf/project-info.json")
+PROJECT_INFO=$(cat "$HASHI_REPO_DIRECTORY/build/conf/project-info.json")
 CLUSTER_PROJECT_ID=$(echo $PROJECT_INFO | jq -r ".cluster_service_project_id")
 CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE=$(echo $PROJECT_INFO | jq -r ".cluster_tf_service_account_ssh_private_key_filepath")
 

@@ -1,21 +1,25 @@
 #!/bin/bash
 
-DEFAULTS=$(cat ./conf/project-defaults.json)
+if [[ -z $HASHI_REPO_DIRECTORY ]]; then
+  echo "error: HASHI_REPO_DIRECTORY env variable must be set"; exit 1
+fi
 
+
+DEFAULTS=$(cat "$HASHI_REPO_DIRECTORY/build/conf/project-defaults.json")
 
 ORGANIZATION_ADMIN_USER=$(echo $DEFAULTS | jq -r ".organization_admin_user_email")
 ORGANIZATION_ID=$(echo $DEFAULTS | jq -r ".organization_id")
 BILLING_ACCOUNT=$(echo $DEFAULTS | jq -r ".billing_account_id")
 
 REGION=$(echo $DEFAULTS | jq -r ".region")
-ZONES_ALLOWED=$(cat "./conf/gcp-locations.json" | jq -r ".zones_by_region[\"$REGION\"]")
+ZONES_ALLOWED=$(cat "$HASHI_REPO_DIRECTORY/build/conf/gcp-locations.json" | jq -r ".zones_by_region[\"$REGION\"]")
 
 # Set the HTTP-basic-auth password for the Traefik, Consul and Nomad web dashboards
 DASHBOARDS_USERNAME=$(echo $DEFAULTS | jq -r ".dashboards_username")
 DASHBOARDS_PASSWORD=$(echo $DEFAULTS | jq -r ".dashboards_password")
 DASHBOARDS_AUTH=$(htpasswd -bn $DASHBOARDS_USERNAME $DASHBOARDS_PASSWORD)
 
-CONTAINER_REGISTRY_HOSTNAME=$(cat "./conf/gcp-locations.json" | jq -r ".container_registry_hosts_by_region[\"$REGION\"]")
+CONTAINER_REGISTRY_HOSTNAME=$(cat "$HASHI_REPO_DIRECTORY/build/conf/gcp-locations.json" | jq -r ".container_registry_hosts_by_region[\"$REGION\"]")
 
 DOMAIN_NAME=$(echo $DEFAULTS | jq -r ".domain_name")
 SUB_DOMAINS="[ \"traefik.$DOMAIN_NAME\", \"consul.$DOMAIN_NAME\", \"nomad.$DOMAIN_NAME\" ]"
@@ -76,7 +80,7 @@ if [[ -z $BILLING_ACCOUNT_EXISTS ]]; then
 fi
 
 # validate region
-REGION_VALID=$(cat "./conf/gcp-locations.json" | jq ".regions | contains([\"$REGION\"])")
+REGION_VALID=$(cat "$HASHI_REPO_DIRECTORY/build/conf/gcp-locations.json" | jq ".regions | contains([\"$REGION\"])")
 if [[ $REGION_VALID != "true" ]]; then
   echo "error: invalid region: $REGION"; exit 1
 fi
@@ -100,9 +104,7 @@ if [[ $? != 0 ]]; then
 fi
 
 
-export REPO_DIRECTORY=$(readlink --canonicalize ..)
-
-PROJECT_INFO_FILEPATH="$REPO_DIRECTORY/build/conf/project-info.json"
+PROJECT_INFO_FILEPATH="$HASHI_REPO_DIRECTORY/build/conf/project-info.json"
 
 # remove any existing project-info.json file
 rm -rf $PROJECT_INFO_FILEPATH
@@ -131,15 +133,15 @@ fi
 VPC_HOST_PROJECT_TF_SA_NAME=$(echo $DEFAULTS | jq -r ".terraform_vpc_host_project_service_account_name")
 VPC_HOST_PROJECT_TF_SA_EMAIL="${VPC_HOST_PROJECT_TF_SA_NAME}@${VPC_HOST_PROJECT_ID}.iam.gserviceaccount.com"
 
-VPC_HOST_PROJECT_TF_SA_CREDENTIALS_FILE="$REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_vpc_host_project_credentials_filename")"
+VPC_HOST_PROJECT_TF_SA_CREDENTIALS_FILE="$HASHI_REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_vpc_host_project_credentials_filename")"
 
 
 CLUSTER_PROJECT_TF_SA_NAME=$(echo $DEFAULTS | jq -r ".terraform_cluster_project_service_account_name")
 CLUSTER_PROJECT_TF_SA_EMAIL="${CLUSTER_PROJECT_TF_SA_NAME}@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com"
 
-CLUSTER_PROJECT_TF_SA_CREDENTIALS_FILE="$REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_cluster_project_credentials_filename")"
-CLUSTER_PROJECT_TF_SA_SSH_PUBLIC_KEY_FILE="$REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_cluster_project_ssh_key_name").pub"
-CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE="$REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_cluster_project_ssh_key_name")"
+CLUSTER_PROJECT_TF_SA_CREDENTIALS_FILE="$HASHI_REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_cluster_project_credentials_filename")"
+CLUSTER_PROJECT_TF_SA_SSH_PUBLIC_KEY_FILE="$HASHI_REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_cluster_project_ssh_key_name").pub"
+CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE="$HASHI_REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_cluster_project_ssh_key_name")"
 
 
 CLUSTER_PROJECT_VM_SA_NAME=$(echo $DEFAULTS | jq -r ".vm_cluster_project_service_account_name")
@@ -158,8 +160,8 @@ KMS_KEYRING="$PREFIX-keyring-$UUID"
 KMS_KEY="$PREFIX-key-$UUID"
 
 
-rm -rf "$REPO_DIRECTORY/keys"
-mkdir -p "$REPO_DIRECTORY/keys"
+rm -rf "$HASHI_REPO_DIRECTORY/keys"
+mkdir -p "$HASHI_REPO_DIRECTORY/keys"
 
 
 # create and configure a Shared VPC 'host project' and a 'service project'
@@ -209,6 +211,7 @@ CLUSTER_PROJECT_TF_SA_USERNAME="sa_$CLUSTER_PROJECT_TF_SA_ID"
 # ------------------------------------------------
 
 JSON_STRING1=$( jq -n \
+  --arg b $HASHI_REPO_DIRECTORY \
   --arg c $REGION \
   --arg d $ORGANIZATION_ID \
   --arg e $ORGANIZATION_ADMIN_USER \
@@ -223,7 +226,7 @@ JSON_STRING1=$( jq -n \
   --arg u $HASHI_SERVER_SIZE \
   --arg v $HASHI_CLIENT_SIZE \
   --arg w $VAULT_SERVER_SIZE \
-  '{ region: $c, organization_id: $d, organization_admin_email: $e, domain_name: $f, sub_domains: $g, dashboard_auth: $h,
+  '{ hashi_repo_directory: $b, region: $c, organization_id: $d, organization_admin_email: $e, domain_name: $f, sub_domains: $g, dashboard_auth: $h,
    num_traefik_servers: $k, num_hashi_servers: $r, num_hashi_clients: $q, num_vault_servers: $s,
    traefik_server_size: $t, hashi_server_size: $u, hashi_client_size: $v, vault_server_size: $w }' )
 

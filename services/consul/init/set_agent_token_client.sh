@@ -9,8 +9,6 @@ export CONSUL_HTTP_ADDR="$(go_discover hashi-server-1):8500"
 export CONSUL_HTTP_TOKEN=$BOOTSTRAP_TOKEN
 
 
-mkdir -p /tmp/ansible-data
-
 cd /scripts/services/consul/
 
 

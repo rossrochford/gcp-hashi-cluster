@@ -1,5 +1,11 @@
 #!/bin/bash
 
+
+if [[ -z $HASHI_REPO_DIRECTORY ]]; then
+  echo "error: HASHI_REPO_DIRECTORY env variable must be set"; exit 1
+fi
+
+
 WORKING_DIRECTORY=$(readlink --canonicalize ".")
 
 if [[ "$WORKING_DIRECTORY" != *build && "$WORKING_DIRECTORY" != *build/ ]]; then
@@ -7,15 +13,14 @@ if [[ "$WORKING_DIRECTORY" != *build && "$WORKING_DIRECTORY" != *build/ ]]; then
   exit 1
 fi
 
-export REPO_DIRECTORY=$(readlink --canonicalize ..)
 
-VARS_FILEPATH="$REPO_DIRECTORY/build/conf/project-info.json"
-
+VARS_FILEPATH="$HASHI_REPO_DIRECTORY/build/conf/project-info.json"
 
 # packer build should be run here (ssh key file paths are relative to this)
-cd "$REPO_DIRECTORY/build/vm_images"
+cd "$HASHI_REPO_DIRECTORY/build/vm_images"
 
 
-#export PACKER_LOG=1
+# uncomment this to enable verbose logging
+# export PACKER_LOG=1
 
 packer build -var-file=$VARS_FILEPATH hashi_base.pkr.hcl

@@ -5,7 +5,11 @@ CLUSTER_PROJECT_ID=$1
 VPC_HOST_PROJECT_ID=$2
 SERVICE_ACCOUNT_EMAIL=$3
 
-DEFAULTS=$(cat ./conf/project-defaults.json)
+if [[ -z $HASHI_REPO_DIRECTORY ]]; then
+  echo "error: HASHI_REPO_DIRECTORY env variable must be set"; exit 1
+fi
+
+DEFAULTS=$(cat "$HASHI_REPO_DIRECTORY/build/conf/project-defaults.json")
 
 ORGANIZATION_ID=$(echo $DEFAULTS | jq -r ".organization_id")
 ORGANIZATION_ADMIN_USER=$(echo $DEFAULTS | jq -r ".organization_admin_user_email")
@@ -16,9 +20,9 @@ REGION=$(echo $DEFAULTS | jq -r ".region")
 
 CLUSTER_SUBNET_NAME=$(echo $DEFAULTS | jq -r ".cluster_subnet_name")
 
-CLUSTER_PROJECT_TF_SA_CREDENTIALS_FILE="$REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_cluster_project_credentials_filename")"
-CLUSTER_PROJECT_TF_SA_SSH_PUBLIC_KEY_FILE="$REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_cluster_project_ssh_key_name").pub"
-CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE="$REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_cluster_project_ssh_key_name")"
+CLUSTER_PROJECT_TF_SA_CREDENTIALS_FILE="$HASHI_REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_cluster_project_credentials_filename")"
+CLUSTER_PROJECT_TF_SA_SSH_PUBLIC_KEY_FILE="$HASHI_REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_cluster_project_ssh_key_name").pub"
+CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE="$HASHI_REPO_DIRECTORY/keys/$(echo $DEFAULTS | jq -r ".terraform_cluster_project_ssh_key_name")"
 
 
 # todo: look over these guides for inspiration:

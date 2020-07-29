@@ -3,8 +3,6 @@
 PROJECT_INFO=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info)
 NUM_HASHI_SERVERS=$(echo $PROJECT_INFO | jq -r ".num_hashi_servers")
 
-mkdir -p /tmp/ansible-data
-
 
 vault operator init -key-shares=1 -key-threshold=1 -format=json > /tmp/ansible-data/vault-init-keys.json
 

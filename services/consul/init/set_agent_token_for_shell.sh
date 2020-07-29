@@ -6,8 +6,6 @@ NODE_NAME=$(hostname)
 NODE_TYPE=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/node-type)
 
 
-mkdir -p /tmp/ansible-data/
-
 
 if [[ $NODE_NAME == "hashi-server-1" ]]; then
   # hashi-server-1 shell token needs some additional abilities because our operations scripts use it (e.g. updating traefik-service-routes in KV)

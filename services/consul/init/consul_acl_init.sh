@@ -2,7 +2,6 @@
 
 # Generate initial bootstrap token for Consul with global-management policy, store this and its SecretID somewhere safe.
 
-mkdir -p /tmp/ansible-data
 consul acl bootstrap -format=json > /tmp/ansible-data/consul-bootstrap-token.json
 
 if [[ $? != 0 ]]; then

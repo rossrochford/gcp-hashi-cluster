@@ -3,8 +3,11 @@
 VPC_HOST_PROJECT_ID=$1
 SERVICE_ACCOUNT_EMAIL=$2
 
+if [[ -z $HASHI_REPO_DIRECTORY ]]; then
+  echo "error: HASHI_REPO_DIRECTORY env variable must be set"; exit 1
+fi
 
-DEFAULTS=$(cat ./conf/project-defaults.json)
+DEFAULTS=$(cat "$HASHI_REPO_DIRECTORY/build/conf/project-defaults.json")
 
 SERVICE_ACCOUNT_NAME=$(echo $DEFAULTS | jq -r ".terraform_vpc_host_project_service_account_name")
 ORGANIZATION_ID=$(echo $DEFAULTS | jq -r ".organization_id")
@@ -38,5 +41,5 @@ done
 
 echo "creating credentials keys for service account"
 
-gcloud iam service-accounts keys create "$REPO_DIRECTORY/keys/terraform-service-account-credentials_vpc-host-project.json" \
+gcloud iam service-accounts keys create "$HASHI_REPO_DIRECTORY/keys/terraform-service-account-credentials_vpc-host-project.json" \
     --iam-account "${SERVICE_ACCOUNT_EMAIL}" --project $VPC_HOST_PROJECT_ID

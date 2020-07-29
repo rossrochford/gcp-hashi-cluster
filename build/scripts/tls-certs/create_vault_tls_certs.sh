@@ -1,6 +1,12 @@
 #!/bin/bash
 
-cd "$REPO_DIRECTORY/build/scripts/tls-certs"
+
+if [[ -z $HASHI_REPO_DIRECTORY ]]; then
+  echo "error: HASHI_REPO_DIRECTORY env variable must be set"; exit 1
+fi
+
+
+cd "$HASHI_REPO_DIRECTORY/build/scripts/tls-certs"
 
 # remove any previous files
 rm -rf /tmp/ansible-data/vault-tls-certs/
@@ -57,5 +63,5 @@ zip "/tmp/ansible-data/vault-tls-certs.zip" *.enc
 rm -rf "/tmp/ansible-data/vault-tls-certs/"
 
 
-rm -f "$REPO_DIRECTORY/build/scripts/tls-certs/terraform.tfstate"
-rm -f "$REPO_DIRECTORY/build/scripts/tls-certs/terraform.tfstate.backup"
+rm -f "$HASHI_REPO_DIRECTORY/build/scripts/tls-certs/terraform.tfstate"
+rm -f "$HASHI_REPO_DIRECTORY/build/scripts/tls-certs/terraform.tfstate.backup"

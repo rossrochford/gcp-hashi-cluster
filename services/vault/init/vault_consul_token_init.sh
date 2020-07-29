@@ -2,7 +2,6 @@
 
 BOOTSTRAP_TOKEN=$1
 
-mkdir -p /tmp/ansible-data
 
 consul acl token create -role-name vault-role -format=json -token=$BOOTSTRAP_TOKEN > /tmp/ansible-data/vault-token.json
 

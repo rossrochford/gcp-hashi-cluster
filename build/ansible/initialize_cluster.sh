@@ -1,6 +1,5 @@
 #!/bin/bash
 
-mkdir -p /tmp/ansible-data/
 
 NODE_IP=$(ip route get 8.8.8.8 | awk '{print $7; exit}')
 

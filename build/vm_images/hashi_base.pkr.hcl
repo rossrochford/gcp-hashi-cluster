@@ -37,6 +37,10 @@ variable "cluster_subnet_name" {
   type = string
 }
 
+variable "hashi_repo_directory" {
+  type = string
+}
+
 
 variable "cluster_tf_service_account_username" {}
 variable "cluster_tf_service_account_ssh_private_key_filepath" {}
@@ -45,15 +49,15 @@ variable "cluster_tf_service_account_ssh_public_key_filepath" {}
 
 source "googlecompute" "hashi-cluster-base" {
 
-  account_file = var.cluster_tf_service_account_credentials_filepath  #"../../keys/sa-credentials.json"
-  project_id = var.cluster_service_project_id  #var.project_id
+  account_file = var.cluster_tf_service_account_credentials_filepath
+  project_id = var.cluster_service_project_id
 
-  service_account_email = var.cluster_tf_service_account_email  # "terraform-service-account@${var.project_id}.iam.gserviceaccount.com"
+  service_account_email = var.cluster_tf_service_account_email
 
-  source_image = "ubuntu-2004-focal-v20200701"
+  source_image = "ubuntu-2004-focal-v20200720"
   source_image_family = "ubuntu-2004-lts"
 
-  image_name = var.base_image_name  # "hashi-cluster-base-v20200614"  # previous: "hashi-cluster-base-v20200607"
+  image_name = var.base_image_name
 
   zone = "${var.region}-a"
 
@@ -107,43 +111,11 @@ build {
     expect_disconnect = true
   }
 
-  /*provisioner "shell" {
-    # install docker (ubuntu 20.04)
-    inline = [
-      "sudo groupadd docker",
-      "sudo usermod -aG docker ubuntu",
-      "sudo mkdir -p /root/.docker/",
-      "sudo mkdir -p /home/packer/scripts",
-      "sudo chown packer:packer /home/packer/scripts",
-      "sudo mkdir -p /home/packer/.docker/",
-
-      # "sudo apt install -y docker-compose",
-      "sudo apt-get install -y docker.io"
-    ]
-  }
-
-  provisioner "shell" {
-    # install docker (ubuntu 18.04)
-    inline = [
-      # create group "docker" and add the ubuntu user
-      "sudo groupadd docker",
-      "sudo usermod -aG docker ubuntu",
-
-      "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
-      "sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\"",
-      "sudo apt update -y",
-      "sudo apt install -y docker-ce",
-      "sudo mkdir -p /root/.docker/",
-      "sudo systemctl enable docker",
-      "sudo systemctl start docker",
-    ]
-  }*/
-
   provisioner "shell" {
     inline = [
       "sudo mkdir -p /home/packer/scripts",
       "sudo chown ${var.cluster_tf_service_account_username}:${var.cluster_tf_service_account_username} /home/packer/scripts",
-      "sudo mkdir -p /home/${var.cluster_tf_service_account_username}/.docker/",  # todo: copy docker config to /home/root/.docker
+      "sudo mkdir -p /home/${var.cluster_tf_service_account_username}/.docker/",  # should this be copied to /home/root/.docker?
       "sudo mkdir -p /etc/traefik",
       "sudo chmod -R 0777 /etc/traefik"
     ]
@@ -154,10 +126,16 @@ build {
     destination = "/home/packer/scripts"
   }
 
+  provision "file" {
+    source = "${var.hashi_repo_directory}/services/"
+    destination = "/home/packer/services"
+  }
+
   provisioner shell {
     inline = [
       "sudo /home/packer/scripts/install-stackdriver-agent.sh",
       "sudo /home/packer/scripts/install-fluentd.sh",
+      "sudo /home/packer/scripts/install-ntp.sh",
       "sudo /home/packer/scripts/install-docker.sh",
 
       "sudo cp /home/packer/scripts/hashicorp-sudoers /etc/sudoers.d/hashicorp-sudoers",

@@ -1,16 +1,10 @@
 #!/bin/bash
 
-
-WORKING_DIRECTORY=$(readlink --canonicalize ".")
-
-# validate working directory is: $REPO_DIRECTORY/build/
-if [[ "$WORKING_DIRECTORY" != *build && "$WORKING_DIRECTORY" != *build/ ]]; then
-  echo "error: working directory must be 'gcp-hashi-cluster/build/'"; exit 1
+if [[ -z $HASHI_REPO_DIRECTORY ]]; then
+  echo "error: HASHI_REPO_DIRECTORY env variable must be set"; exit 1
 fi
 
-export REPO_DIRECTORY=$(readlink --canonicalize ..)
-
-export PROJECT_INFO=$(cat "$REPO_DIRECTORY/build/conf/project-info.json")
+export PROJECT_INFO=$(cat "$HASHI_REPO_DIRECTORY/build/conf/project-info.json")
 
 CLUSTER_PROJECT_ID=$(echo $PROJECT_INFO | jq -r ".cluster_service_project_id")
 REGION=$(echo $PROJECT_INFO | jq -r ".region")
