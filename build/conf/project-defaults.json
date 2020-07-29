@@ -12,8 +12,8 @@
   "num_hashi_servers": 3,
   "hashi_server_size": "n1-standard-1",
 
-  "num_hashi_clients": 1,
-  "hashi_client_size": "n1-standard-1",
+  "num_hashi_clients": 2,
+  "hashi_client_size": "n1-standard-2",
 
   "num_vault_servers": 1,
   "vault_server_size": "n1-standard-1",

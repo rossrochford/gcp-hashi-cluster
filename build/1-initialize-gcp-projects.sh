@@ -227,8 +227,8 @@ JSON_STRING1=$( jq -n \
   --arg v $HASHI_CLIENT_SIZE \
   --arg w $VAULT_SERVER_SIZE \
   '{ hashi_repo_directory: $b, region: $c, organization_id: $d, organization_admin_email: $e, domain_name: $f, sub_domains: $g, dashboard_auth: $h,
-   num_traefik_servers: $k, num_hashi_servers: $r, num_hashi_clients: $q, num_vault_servers: $s,
-   traefik_server_size: $t, hashi_server_size: $u, hashi_client_size: $v, vault_server_size: $w }' )
+   num_traefik_servers: $k, traefik_server_size: $t, num_hashi_servers: $r, hashi_server_size: $u, num_hashi_clients: $q, hashi_client_size: $v,
+   num_vault_servers: $s, vault_server_size: $w }' )
 
 
 JSON_STRING2=$( jq -n \
@@ -299,4 +299,4 @@ END
 
 
 # validate quotas
-./scripts/7-validate-quotas.sh $VPC_HOST_PROJECT_ID $CLUSTER_PROJECT_ID
+#./scripts/7-validate-quotas.sh $VPC_HOST_PROJECT_ID $CLUSTER_PROJECT_ID

@@ -126,7 +126,7 @@ build {
     destination = "/home/packer/scripts"
   }
 
-  provision "file" {
+  provisioner "file" {
     source = "${var.hashi_repo_directory}/services/"
     destination = "/home/packer/services"
   }
