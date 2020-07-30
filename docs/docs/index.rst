@@ -31,7 +31,6 @@ Remaining work
 - Although the build scripts will get you up and running, some scripts for day-to-day operations are missing. For example to add a new node to an already-running cluster, there is no script for automating this.
 - The instances run in a single region but the load-balancer and public IP address are configured as global resources, this isn't ideal, it means external HTTP clients' may experience higher response latency. Changing this shouldn't be too difficult, see :ref:`this guide<making_load_balancer_regional>`.
 - `Forseti <https://github.com/forseti-security/terraform-google-forseti>`_ will be added in future. This allows you to visualize and monitor your GCP IAM roles, permissions and service accounts.
-- The Vault configuration was a little rushed, I followed the official tutorials closely but it needs further inspection. There is also no tutorial included showing how to use Vault.
 
 
 .. Caution:: This project is a work in progress, it has not been battle-tested in production or audited by security professionals.
