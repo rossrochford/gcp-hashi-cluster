@@ -35,6 +35,25 @@ job "count-service-job" {
       config {
         image = "nomad/count-webserver:v0.1"
       }
+
+      /*
+      vault {
+        policies = ["nomad-client-base"]
+        change_mode   = "noop"
+      }
+
+      template {
+        data = <<EOH
+          {{ with secret "secret/data/nomad/counter/social-auth-facebook" }}
+          FACEBOOK_KEY="{{ .Data.data.app_key }}"
+          FACEBOOK_SECRET="{{ .Data.data.app_secret }}"
+          {{ end }}
+EOH
+        destination = "secrets/file.env"
+        env         = true
+      }
+      */
+
     }
   }
 }

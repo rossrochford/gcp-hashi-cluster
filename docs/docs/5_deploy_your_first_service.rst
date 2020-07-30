@@ -148,3 +148,71 @@ Verify your services are working
 
 __ https://github.com/rossrochford/gcp-hashi-cluster/issues/new
 __ https://calendly.com/ross-rochford/gcp-hashi-cluster
+
+
+Storing secrets in Vault
+----------------------------------
+
+Suppose the counter service needs to authenticate with a 3rd party API, we don't want to place keys in the application code. Vault integrates with Nomad to deliver sensitive secrets to applications.
+
+We've configured Nomad and Vault with a policy ``nomad-client-base`` for reading secrets from the Vault KV path: ``secrets/data/nomad/*``. The write-only Vault token generated earlier allows writing secrets to this path, and `vault-server-1` has this set as its ``VAULT_TOKEN`` environment variable, for convenience.
+
+- Create a json file with a path (prefixed by `secret/nomad/`) and some fields/values to store.
+
+.. code-block:: json
+
+    {
+        "secret/nomad/counter/social-auth-facebook": {
+            "app_key": "16696501350101",
+            "app_secret": "731ebc29cne367cv6213c1"
+        }
+    }
+
+
+- Run the `write-secrets.sh` script, this connects to `vault-server-1` and runs `vault kv put.`__
+
+__ https://www.vaultproject.io/docs/commands/kv/put
+
+
+.. code-block:: console
+
+    $ cd operations/
+    $ ./vault/write-secrets.sh my-secrets.json
+
+
+- Uncomment the `vault` and `template` sections in `count-webserver.nomad` and resubmit the job. The path here should be prefixed with ``secret/data/nomad/`` instead of ``secret/nomad/`` due to a quirk in Vault's `KV V2 API`__
+
+
+__ https://www.vaultproject.io/api/secret/kv/kv-v2.html
+
+
+.. code-block:: console
+
+    /* ... */
+
+    task "count-service-task" {
+      driver = "docker"
+
+      config {
+        image = "nomad/count-webserver:v0.1"
+      }
+
+      vault {
+        policies = ["nomad-client-base"]
+        change_mode   = "noop"
+      }
+
+      template {
+        data = <<EOH
+          {{ with secret "secret/data/nomad/counter/social-auth-facebook" }}
+          FACEBOOK_KEY="{{ .Data.data.app_key }}"
+          FACEBOOK_SECRET="{{ .Data.data.app_secret }}"
+          {{ end }}
+    EOH
+        destination = "secrets/file.env"
+        env         = true
+      }
+
+    }
+
+- Your secrets will be available to the service's container(s) as environment variables: ``FACEBOOK_KEY`` and ``FACEBOOK_SECRET``.
