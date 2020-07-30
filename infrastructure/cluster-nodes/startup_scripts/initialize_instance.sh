@@ -14,8 +14,7 @@ cd /
 git clone https://github.com/rossrochford/gcp-hashi-cluster.git
 mv /gcp-hashi-cluster /scripts
 cd /scripts
-git checkout dev  # todo: add branch name to project-info
-
+# git checkout dev
 
 
 /scripts/infrastructure/cluster-nodes/scripts/_initialize_instance.sh
