@@ -73,6 +73,7 @@ VAULT_NODE_IPS=$(echo $VAULT_NODE_IPS | awk 1 ORG=' ')  # replace newlines with 
 ./scripts/tls-certs/create_vault_tls_certs.sh $VAULT_NODE_IPS
 
 
+
 # copy vault-tls-certs.zip to the other instances
 # --------------------------------------------------------
 

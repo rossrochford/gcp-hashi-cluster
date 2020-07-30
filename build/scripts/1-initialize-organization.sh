@@ -50,4 +50,5 @@ create_role_if_doesnt_exist() {
 
 create_role_if_doesnt_exist "computeAddressUser" "compute.addresses.use"
 
-create_role_if_doesnt_exist "goDiscoverClient" "compute.zones.list,compute.instances.list"
+# consider renaming this role or creating a separate role for setting labels
+create_role_if_doesnt_exist "goDiscoverClient" "compute.zones.list,compute.instances.list,compute.instances.get,compute.zoneOperations.get,compute.instances.setLabels,"
