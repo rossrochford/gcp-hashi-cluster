@@ -22,7 +22,9 @@ Build base VM image
 
     $ ./3-build-base-image.sh
 
-This uses Packer to build a Ubuntu 20.04 image with Consul, Nomad and Vault installed. To use Ubuntu 18.04 simply change ``source_image_family`` in *build/vm_images/hashi_base.pkr.hcl*
+Occasionally this will fail, if it does simply try again.
+
+Builds a Ubuntu 20.04 image with Consul, Nomad and Vault installed. For directions on switching to Ubuntu 18.04 see: :ref:`Changing the Ubuntu version <changing_ubuntu_version>`
 
 
 Provision cluster instances
@@ -115,20 +117,25 @@ Scroll up and you will see that some tokens were printed to the terminal:
 
 .. code-block:: console
 
-    consul bootstrap token:                           byg27910-ih8d-f910-g831-9t4794d2a25h
-    consul UI token (read/write):                     ec15675e-2999-d789-832e-8c4794daa8d7
-    consul UI token (read-only):                      1bisj84s-0vnc-9vc2-98jd-sdfs3dfg4354
-    vault root token:                                 snds92v2-7f9s-a7c6-8d7a-n7aysz93m1g1
+    consul bootstrap token:                         68fc76db-68e1-8ed5-cda3-c4e999c1
+    consul gossip encryption key:                   HlP1zzUq1fPHPmOijREvHNkL97RyhTTE
+
+    consul UI token (read/write):                   5d9c505f-06ea-b69f-11e5-ebad2037
+    consul UI token (read-only):                    c14f1ae7-4151-4b70-8f28-5ac23151
+
+    vault root token:                               s.XOFjR30ZDSjQ9PYFjjut2mbq
+    vault write-only token:                         s.1N3qtpI7jnEbTWnRUDCyHtXZ
 
 
-- Copy these tokens and store them somewhere safe. The Consul bootstrap token has write privileges on every Consul resource and can be used to create additional highly privileged tokens.
-- We will use the Consul UI token (read/write) to log in to the Consul web dashboard.
+- Copy these tokens and store them somewhere safe. The Consul bootstrap and Vault root tokens are all-powerful and can be used to create additional highly privileged tokens.
+- The Consul UI token (read/write) will be used to log in to the Consul web dashboard.
+- The Vault write-only token will be used to store secrets.
 
 
 Clean up initialization data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Ansible playbooks leave a trail of sensitive data behind in /tmp/ansible-data/ on every instance and the syslogs may contain sensitive tokens. Run this script to remove this data.
+The Ansible playbooks leave a trail of sensitive data behind on every instance in `/tmp/ansible-data/` and the syslogs may contain sensitive tokens. Run this script to remove this data.
 
 
 .. code-block:: console

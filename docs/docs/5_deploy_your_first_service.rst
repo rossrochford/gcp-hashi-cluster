@@ -47,7 +47,7 @@ This pushes your image to a private GCP container registry and then launches an 
 
 .. important::
 
-    Due to an unresolved configuration issue, Nomad isn't able to authenticate and pull images from private GCP container registries directly. As a workaround the script above gives your image a tag in the form: `nomad/your-service:v0.1`. You will need to use this in your Nomad jobs.
+    Due to an unresolved configuration issue, Nomad won't be able to pull images from a private GCP container registry. As a workaround the script above pulls images outside of Nomad and gives them a local tag in the form: `nomad/your-service:v0.1`. You will need to use this tag in your Nomad jobs.
 
 
 Submit the webserver Nomad Job
@@ -87,35 +87,47 @@ __ https://www.consul.io/docs/connect/intentions
 Create a routing rule in Traefik
 -----------------------------------
 
-Your Traefik nodes have a config file ``/etc/traefik/dynamic-conf.toml`` with its routes. The process we use here for updating routes is convenient but a little obtuse in its underlying implementation, you may prefer to simply edit ``dynamic-conf.toml`` directly. You will find the template file in services/traefik/dynamic-conf.toml.tmpl.
+Routes in the Traefik instance are configured in ``/etc/traefik/dynamic-conf.toml``. This gets rendered dynamically by `consul-template`__. The underlying implementation is a little obtuse (see: `services/traefik/systemd/watch-traefik-routes-updated.service`), you may prefer to disable this and maintain `dynamic-conf.toml` manually as a static file.
 
-- Edit ``gcp-hashi-cluster/operations/traefik/traefik-service-routes.json`` on your local machine, here we will associate a `Traefik router rule`__ with the ``count-webserver`` Consul service. You may also wish to update `dashboards_ip_allowlist` to limit public access to the Consul, Nomad and Traefik web dashboards.
+__ https://github.com/hashicorp/consul-template
 
-__ https://docs.traefik.io/routing/routers/#rule
+
+Create a json file with the following content:
+
 
 .. code-block:: json
 
     {
-      "dashboards_ip_allowlist": ["0.0.0.0/0"],
-      "routes": [
-        {
-          "service_name": "count-webserver",
-          "routing_rule": "PathPrefix(`/counter`)"
-        }
-      ]
+        "dashboards_ip_allowlist": ["0.0.0.0/0"],
+        "routes": [
+            {
+                "traefik_service_name": "count-webserver",
+                "consul_service_name": "count-webserver",
+                "routing_rule": "PathPrefix(`/counter`)",
+                "connect_enabled": true
+            }
+        ]
     }
+
+
+- This defines a Traefik `service`__ and `router rule`__ and that routes incoming HTTP requests to our ``count-webserver`` service.
+
+__ https://docs.traefik.io/routing/services/
+__ https://docs.traefik.io/routing/routers/#rule
+
 
 .. tip::
 
-    The PathPrefix should be a valid prefix in your service's HTTP API. To add a custom prefix in Traefik there are some options (`StripPrefix`, `HeadersRegexp`) but this can be tricky in practice.
+    The PathPrefix should be a valid prefix in your service's HTTP API. Traefik can also add/remove path prefixes before forwarding requests (see: `StripPrefix`, `HeadersRegexp`).
+
 
 
 Next run the following script to publish your service routes:
 
 .. code-block:: console
 
-    $ cd gcp-hashi-cluster/operations/
-    $ ./traefik/refresh-service-routes.sh
+    $ cd gcp-hashi-cluster/operations/traefik/
+    $ ./overwrite-service-routes.sh <my-routes.json>
 
 
 This uploads the json file and re-renders configurations for Traefik and its local `Consul Connect sidecar proxy`__.

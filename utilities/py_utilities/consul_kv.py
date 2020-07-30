@@ -219,8 +219,8 @@ def _add_update_routes(
             addresses = [f'http://localhost:{bind_port}/']
         else:
             addresses = []
-            for nd in cli.catalog.service(di['consul_service_name'])[1]:
-                addr = 'http://' + nd['ServiceAddress'] + ':' + str(nd['ServicePort']) + '/'
+            for node in cli.catalog.service(di['consul_service_name'])[1]:
+                addr = 'http://' + node['ServiceAddress'] + ':' + str(node['ServicePort']) + '/'
                 addresses.append(addr)
 
         di = {

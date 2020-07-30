@@ -5,6 +5,8 @@ Customizing the cluster
 gcp-hashi-cluster is intended as a starting point to get up and running or as a reference to help you learn about Consul and Nomad. It isn't designed to be configured in every possible way. However here are some rough directions on customizations you may wish to make.
 
 
+.. _changing_ubuntu_version:
+
 Changing the Ubuntu version
 -------------------------------------------------------
 
@@ -12,7 +14,7 @@ The Packer build script has been tested with Ubuntu 18.04 and 20.04, presumably 
 
 - Find a Ubuntu image by runing: ``gcloud compute images list | grep ubuntu``
 - In `build/vm_images/hashi_base.pkr.hcl` change ``source_image`` and ``source_image_family``.
-- Update the ``base_image_name`` in `build/conf/project-info.json` so that the name doesn't conflict with the existing image.
+- If you have previously built an image in your project, either remove the old image or update the ``base_image_name`` in `build/conf/project-info.json` so the names don't conflict.
 
 Finally run:
 

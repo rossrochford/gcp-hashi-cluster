@@ -114,10 +114,14 @@ build {
   provisioner "shell" {
     inline = [
       "sudo mkdir -p /home/packer/scripts",
+      "sudo mkdir -p /home/packer/services",
       "sudo chown ${var.cluster_tf_service_account_username}:${var.cluster_tf_service_account_username} /home/packer/scripts",
-      "sudo mkdir -p /home/${var.cluster_tf_service_account_username}/.docker/",  # should this be copied to /home/root/.docker?
+      "sudo chown ${var.cluster_tf_service_account_username}:${var.cluster_tf_service_account_username} /home/packer/services",
+
       "sudo mkdir -p /etc/traefik",
-      "sudo chmod -R 0777 /etc/traefik"
+      "sudo chmod -R 0777 /etc/traefik",
+
+      "sudo mkdir -p /home/${var.cluster_tf_service_account_username}/.docker/"  # should this be copied to /home/root/.docker?
     ]
   }
 

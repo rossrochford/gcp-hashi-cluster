@@ -30,9 +30,10 @@ resource "google_compute_instance_template" "hashi-client-template" {
     ssh-keys = "${var.cluster_tf_service_account_username}:${file(var.cluster_tf_service_account_ssh_public_key_filepath)}"
     project-info = file(var.project_info_filepath)
   }
-  metadata_startup_script = file("./scripts/hashi_vm_startup.sh")
+  metadata_startup_script = file("./startup_scripts/initialize_instance.sh")
 
   labels = {
+    startup_status = "stopped"
     node_type = "hashi_client"
   }
 

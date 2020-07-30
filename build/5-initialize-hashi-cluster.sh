@@ -21,12 +21,48 @@ CLUSTER_PROJECT_TF_SA_SSH_PUBLIC_KEY_FILE=$(echo $PROJECT_INFO | jq -r ".cluster
 CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE=$(echo $PROJECT_INFO | jq -r ".cluster_tf_service_account_ssh_private_key_filepath")
 
 
-INSTANCES=$(gcloud compute instances list --project $CLUSTER_PROJECT_ID --filter="labels.node_type=traefik OR labels.node_type=hashi_server OR labels.node_type=hashi_client OR labels.node_type=vault"  --format="csv[no-heading](NAME,ZONE)")
+INSTANCES=$(gcloud compute instances list --project $CLUSTER_PROJECT_ID \
+  --filter="labels.node_type=traefik OR labels.node_type=hashi_server OR labels.node_type=hashi_client OR labels.node_type=vault"  \
+  --format="csv[no-heading](NAME,ZONE,STATUS,LABELS)")
 
+
+
+# validating that instances are alive and initialized
+# ---------------------------------------------------
 
 if [[ -z $INSTANCES ]]; then
   echo "error: no instances found"; exit 1
 fi
+
+get_startup_status() {
+  LABEL_STR=$1
+  STATUS=$(python -c "labels=dict([pair.split('=') for pair in \"$LABEL_STR\".split(';')]); print(labels['startup_status'])")
+  echo $STATUS
+}
+
+
+while IFS= read -r LINE; do
+
+    INSTANCE_NAME=$(echo $LINE | cut -d',' -f1)
+    STATUS=$(echo $LINE | cut -d',' -f3)
+    LABELS=$(echo $LINE | cut -d',' -f4)
+    STARTUP_STATUS=$(get_startup_status $LABELS)
+
+    if [[ $STARTUP_STATUS == "failed" ]]; then
+      echo "$INSTANCE_NAME failed during initialization, exiting"; exit 1
+    fi
+
+    if [[ $STATUS == "TERMINATED" ]]; then
+      echo "$INSTANCE_NAME is TERMINATED, remove or restart this instance, exiting"; exit 1
+    fi
+
+    if [[ $STATUS != "RUNNING" || $STARTUP_STATUS == "initializing" ]]; then
+      echo "$INSTANCE_NAME is still initializing, waiting 45s"
+      sleep 45
+    fi
+
+done <<< "$INSTANCES"
+
 
 
 # create TLS certs for Vault
@@ -86,17 +122,6 @@ rm -rf "/tmp/ansible-data/collected-keys/"
 cd $WORKING_DIRECTORY
 
 
-hashi_server1_ssh () {
-  COMMAND=$1
-  gcloud compute ssh $INSTANCE_NAME \
-    --zone=$INSTANCE_ZONE \
-    --tunnel-through-iap \
-    --project $CLUSTER_PROJECT_ID \
-    --ssh-key-file=$CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE \
-    --command="$COMMAND"
-}
-
-
 # Upload zip file to hashi-server-1
 # ---------------------------------------------------------------
 
@@ -110,13 +135,24 @@ gcloud compute scp "/tmp/ansible-data/collected-keys.zip" "$INSTANCE_NAME:/tmp/c
 
 if [[ $? != 0 ]]; then
   rm -f "/tmp/ansible-data/collected-keys.zip"
-  echo "SCP failed, exiting"; exit 1
+  echo "SCP to $INSTANCE_NAME failed, exiting"; exit 1
 fi
-
 
 rm -f "/tmp/ansible-data/collected-keys.zip"
 
-hashi_server1_ssh "/scripts/infrastructure/cluster-nodes/scripts/place_collected_keys.sh"
+
+hashi_server1_ssh () {
+  COMMAND=$1
+  gcloud compute ssh $INSTANCE_NAME \
+    --zone=$INSTANCE_ZONE \
+    --tunnel-through-iap \
+    --project $CLUSTER_PROJECT_ID \
+    --ssh-key-file=$CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE \
+    --command="$COMMAND"
+}
+
+
+hashi_server1_ssh "/scripts/infrastructure/cluster-nodes/startup_scripts/place_collected_keys.sh"
 
 
 
@@ -131,7 +167,7 @@ sleep 30
 
 PING_URL="https://$DOMAIN_NAME/ping"
 
-for run in {1..60}
+for run in {1..70}
 do
   echo "attempting request to: $PING_URL"
   STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}"  $PING_URL)

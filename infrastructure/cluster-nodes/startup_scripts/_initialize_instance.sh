@@ -1,18 +1,17 @@
 #!/bin/bash
 
+cd /scripts
+
+
 NODE_IP=$(ip route get 8.8.8.8 | awk '{print $7; exit}')
 NODE_NAME=$(hostname)
 NODE_TYPE=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/node-type)
-export GCP_INSTANCE_ID=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/id)
+GCP_INSTANCE_ID=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/id)
 PROJECT_INFO=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info)
 CLUSTER_PROJECT_ID=$(echo $PROJECT_INFO | jq -r ".cluster_service_project_id")
 
-cd /
-git clone https://github.com/rossrochford/gcp-hashi-cluster.git
 
-mv /gcp-hashi-cluster /scripts
-cd /scripts
-git checkout dev  # todo: add branch name to project-info
+service ntp reload
 
 
 # project-wide and node-wide prefixes for storing metadata in Consul
@@ -23,12 +22,12 @@ echo "CTN_PREFIX=\"$CTN_PREFIX\"" >> /etc/environment
 echo "CTP_PREFIX=\"$CTP_PREFIX\"" >> /etc/environment
 
 
-export PYTHONPATH=/scripts/utilities
 echo "PYTHONPATH=/scripts/utilities" >> /etc/environment
 echo "GCP_INSTANCE_ID=$GCP_INSTANCE_ID" >> /etc/environment
 
 
 echo "creating metadata"
+export PYTHONPATH=/scripts/utilities
 python3 utilities/py_utilities/create_metadata.py
 
 
@@ -68,10 +67,3 @@ else
   echo "CONSUL_HTTP_ADDR=\"$NODE_IP:8500\"" >> /etc/environment
   echo "NOMAD_ADDR=\"http://$NODE_IP:4646\"" >> /etc/environment
 fi
-
-
-# todo: move to packer script
-#apt install ntp
-#cp /scripts/services/system-misc/ntp/ntp.conf /etc/ntp.conf
-#service ntp reload
-#pip3 install invoke==1.4.1

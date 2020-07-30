@@ -26,7 +26,7 @@ You should also have a billing account, get its ID:
     04G191-25080H-12J8C3       My Billing Account         True
 
 
-.. Hint:: There are default quota limits on the number of projects that can be linked to a billing account (5 I think?). The script below needs sufficient quota to link two new projects to your billing account. You can view the existing projects linked to a billing account at: `https://console.cloud.google.com/billing/<billing_account_id>/manage`
+.. Warning:: There are default quota limits on the number of projects that can be linked to a billing account (5 I think?). The script below needs sufficient quota to link two new projects to your billing account. You can view the existing projects linked to a billing account at: `https://console.cloud.google.com/billing/<billing_account_id>/manage`
 
 
 Next open the project-defaults file: `build/conf/project-defaults.json` and fill in the following fields:
@@ -45,17 +45,31 @@ Run the first build script:
 
 .. code-block:: console
 
-    $ cd gcp-hashi-cluster/build/     # build scripts must be run from this directory
+    $ cd gcp-hashi-cluster/
+
+    # important to set this environment variable
+    $ export HASHI_REPO_DIRECTORY=$(pwd)
+
+    # build scripts must be run from within this directory
+    $ cd build/
 
     $ ./1-initialize-gcp-projects.sh
 
 
 This will take about 10 minutes to complete. The following items will be created:
 
-- Two projects named: *vpc-host-project-<uuid>* and *hashi-cluster-<uuid>*. These prefixes can be set in *project-defaults.json*.
+- Two projects named: *vpc-host-project-<uuid>* and *hashi-cluster-<uuid>*. To change these prefixes see *project-defaults.json*.
 - Three service accounts, two highly privileged accounts for Terraform, and a third more restricted account that will be assigned to instances.
-- Credentials keys (json) for the service accounts and an SSH key used by Packer, these are stored in the *keys/* directory.
+- Credentials keys (json) for the service accounts and an SSH key used by Packer, these are downloaded and stored in the *keys/* directory.
 - A shared VPC network and a subnetwork for the cluster service project.
 - A public IP address for the load-balancer.
 - A KMS keyring and key.
-- A json file **build/conf/project-info.json** with configuration parameters for Packer, Terraform and the remaining build scripts. Be careful when updating this file, some values can be altered, such as `num_hashi_clients` or `sub_domains`, but some others should not be.
+- A json file **build/conf/project-info.json** with configuration parameters for Packer, Terraform and the remaining build scripts.
+
+
+
+Be careful when updating the `project-info.json` file, some values can be altered, some can be altered before starting the cluster but not after, and some should never be altered.
+
+Now is a good time to amend `num_hashi_clients` and `hashi_client_size`, or to add additional `sub_domains`. Once the cluster is running, altering sub-domains on the load-balancer's SSL certificate is not trivial.
+
+If your services accept websocket connections from clients you need to increase `http_timeout_sec` to the maximum length of your websocket sessions. This will affect the max response timeouts on all HTTPs traffic, you may prefer to define a separate backend service  (`google_compute_backend_service`) for websocket services and keep a shorter timeout for regular HTTPs traffic, see: `Backend Service Timeout <https://cloud.google.com/load-balancing/docs/backend-service#timeout-setting>`_

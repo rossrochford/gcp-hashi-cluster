@@ -45,7 +45,6 @@ create_role_if_doesnt_exist() {
     # create custom role if it doesn't exist
     gcloud iam roles create $NAME --organization=$ORGANIZATION_ID --permissions=$PERMISSIONS --stage=ALPHA
   fi
-
 }
 
 
