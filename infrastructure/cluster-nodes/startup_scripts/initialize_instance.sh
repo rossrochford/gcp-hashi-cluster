@@ -20,7 +20,7 @@ cd /scripts
 # git checkout dev
 
 
-/scripts/infrastructure/cluster-nodes/scripts/_initialize_instance.sh
+/scripts/infrastructure/cluster-nodes/startup_scripts/_initialize_instance.sh
 
 
 if [[ $? == 0 ]]; then
