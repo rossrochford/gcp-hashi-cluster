@@ -87,9 +87,13 @@ __ https://www.consul.io/docs/connect/intentions
 Create a routing rule in Traefik
 -----------------------------------
 
-Routes in the Traefik instance are configured in ``/etc/traefik/dynamic-conf.toml``. This gets rendered dynamically by `consul-template`__. The underlying implementation is a little obtuse (see: `services/traefik/systemd/watch-traefik-routes-updated.service`), you may prefer to disable this and maintain `dynamic-conf.toml` manually as a static file.
+Routes in the Traefik instance are configured in ``/etc/traefik/dynamic-conf.toml``. This gets rendered dynamically by `consul-template`__.
 
 __ https://github.com/hashicorp/consul-template
+
+.. tip::
+
+    The implementation underlying how service routes are updated on Traefik servers is little obtuse (see: `services/traefik/systemd/watch-traefik-routes-updated.service`), you may prefer to disable this and simply maintain `dynamic-conf.toml` manually as a static file.
 
 
 Create a json file with the following content:
@@ -110,7 +114,7 @@ Create a json file with the following content:
     }
 
 
-- This defines a Traefik `service`__ and `router rule`__ and that routes incoming HTTP requests to our ``count-webserver`` service.
+- This defines a Traefik `service`__ and `router rule`__ that routes incoming HTTP requests to our ``count-webserver`` service via a sidecar proxy.
 
 __ https://docs.traefik.io/routing/services/
 __ https://docs.traefik.io/routing/routers/#rule
@@ -118,7 +122,7 @@ __ https://docs.traefik.io/routing/routers/#rule
 
 .. tip::
 
-    The PathPrefix should be a valid prefix in your service's HTTP API. Traefik can also add/remove path prefixes before forwarding requests (see: `StripPrefix`, `HeadersRegexp`).
+    The PathPrefix should be a valid prefix in your service's HTTP API. Traefik can also add/remove path prefixes before forwarding requests to services (see: `StripPrefix`, `HeadersRegexp`).
 
 
 
@@ -153,9 +157,9 @@ __ https://calendly.com/ross-rochford/gcp-hashi-cluster
 Storing secrets in Vault
 ----------------------------------
 
-Suppose the counter service needs to authenticate with a 3rd party API, we don't want to place keys in the application code. Vault integrates with Nomad to deliver sensitive secrets to applications.
+Suppose our counter service needs to authenticate with a 3rd party API, we don't want to place keys directly in the application code. Vault integrates with Nomad to deliver sensitive secrets to applications.
 
-We've configured Nomad and Vault with a policy ``nomad-client-base`` for reading secrets from the Vault KV path: ``secrets/data/nomad/*``. The write-only Vault token generated earlier allows writing secrets to this path, and `vault-server-1` has this set as its ``VAULT_TOKEN`` environment variable, for convenience.
+The write-only Vault token generated earlier allows writing secrets to this a path ``secret/nomad/``. `Vault-server-1` has this set as its ``VAULT_TOKEN`` environment variable, for convenience.
 
 - Create a json file with a path (prefixed by `secret/nomad/`) and some fields/values to store.
 
@@ -180,8 +184,7 @@ __ https://www.vaultproject.io/docs/commands/kv/put
     $ ./vault/write-secrets.sh my-secrets.json
 
 
-- Uncomment the `vault` and `template` sections in `count-webserver.nomad` and resubmit the job. The path here should be prefixed with ``secret/data/nomad/`` instead of ``secret/nomad/`` due to a quirk in Vault's `KV V2 API`__
-
+- Uncomment the `vault` and `template` sections in `count-webserver.nomad` and resubmit the job. Due to a quirk in Vault's `KV V2 API`__ the path prefix should be ``secret/data/nomad/`` instead of ``secret/nomad/``  Nomad and Vault have been configured with a policy ``nomad-client-base`` for reading secrets this path.
 
 __ https://www.vaultproject.io/api/secret/kv/kv-v2.html
 
