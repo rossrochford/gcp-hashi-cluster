@@ -63,9 +63,8 @@ This will take about 10 minutes to complete. The following items will be created
 - Credentials keys (json) for the service accounts and an SSH key used by Packer, these are downloaded and stored in the *keys/* directory.
 - A shared VPC network and a subnetwork for the cluster service project.
 - A public IP address for the load-balancer.
-- A KMS keyring and key.
+- A `KMS <https://cloud.google.com/security-key-management>`_ keyring and key.
 - A json file **build/conf/project-info.json** with configuration parameters for Packer, Terraform and the remaining build scripts.
-
 
 
 Be careful when updating the `project-info.json` file, some values can be altered, some can be altered before starting the cluster but not after, and some should never be altered.

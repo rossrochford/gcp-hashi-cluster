@@ -54,7 +54,7 @@ source "googlecompute" "hashi-cluster-base" {
 
   service_account_email = var.cluster_tf_service_account_email
 
-  source_image = "ubuntu-2004-focal-v20200810"
+  source_image = "ubuntu-2004-focal-v20201008"
   source_image_family = "ubuntu-2004-lts"
 
   image_name = var.base_image_name
