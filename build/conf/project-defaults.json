@@ -1,12 +1,12 @@
 {
-  "organization_id": "712851330427",
-  "organization_admin_user_email": "ross@eventpouch.com",
-  "billing_account_id": "01F121-55089B-02E5C6",
-  "domain_name": "eventpouch.com",
+  "organization_id": "",
+  "organization_admin_user_email": "",
+  "billing_account_id": "",
+  "domain_name": "mydomain.com",
   "region": "europe-west3",
 
-  "dashboards_username": "admin",
-  "dashboards_password": "browserchunk321",
+  "dashboards_username": "",
+  "dashboards_password": "",
 
 
   "num_hashi_servers": 3,
