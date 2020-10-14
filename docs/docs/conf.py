@@ -1,4 +1,4 @@
-import sphinx_rtd_theme
+import sphinx_typlog_theme
 
 
 # For configuration docs see: https://www.sphinx-doc.org/en/master/usage/configuration.html
@@ -45,35 +45,27 @@ if html_theme == 'sphinx_typlog_theme':
     pygments_style = 'sphinx'
 
     html_css_files = [
-        # these pages, if not absolute, are relative to html_static_path
+        # these paths are relative to html_static_path, unless absolute
         'css/hide-toc.css'
     ]
     html_theme_options = {
-        #'logo': 'tractor_logo_side.svg',
         #'description': 'Consul/Nomad cluster for Google Cloud Platform',
         'github_user': 'rossrochford',
         'github_repo': 'gcp-hashi-cluster',
         #'color': '#E8371A',
-        'meta_html': '<meta name="generator" content="sphinx">',
+        #'meta_html': '<meta name="generator" content="sphinx">',
     }
     html_sidebars = {
         '**': [
             #'logo.html',
             'github.html',
             'globaltoc.html',
+            # 'relations.html',
             #'sponsors.html',
             'searchbox.html',
         ]
     }
-    '''
-    html_sidebars = {
-        "**": [
-            'logo.html',
-            'github.html',
-            'relations.html',
-            'searchbox.html'
-        ]
-    }'''
+
 elif html_theme == 'sphinx_rtd_theme':
     html_theme_options = {
         'canonical_url': '',
