@@ -217,4 +217,4 @@ __ https://www.vaultproject.io/api/secret/kv/kv-v2.html
 
     }
 
-- Your secrets will be available to the service's container(s) as environment variables: ``FACEBOOK_KEY`` and ``FACEBOOK_SECRET``.
+- Your secrets will be available to the service containers as environment variables: ``FACEBOOK_KEY`` and ``FACEBOOK_SECRET``.
