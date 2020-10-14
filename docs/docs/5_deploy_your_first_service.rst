@@ -114,10 +114,11 @@ Create a json file with the following content:
     }
 
 
-- This defines a Traefik `service`__ and `router rule`__ that routes incoming HTTP requests to our ``count-webserver`` service via a sidecar proxy.
+- This defines a Traefik `service`__ and `router rule`__ that routes incoming HTTP requests to our ``count-webserver`` service via a `Consul Connect sidecar proxy`__.
 
 __ https://docs.traefik.io/routing/services/
 __ https://docs.traefik.io/routing/routers/#rule
+__ https://www.consul.io/docs/connect/proxies
 
 
 .. tip::
@@ -134,15 +135,13 @@ Next run the following script to publish your service routes:
     $ ./overwrite-service-routes.sh <my-routes.json>
 
 
-This uploads the json file and re-renders configurations for Traefik and its local `Consul Connect sidecar proxy`__.
-
-__ https://www.consul.io/docs/connect/proxies
+This uploads the json file and re-renders configurations for Traefik and its local sidecar proxy.
 
 
 Verify your services are working
 -----------------------------------
 
-- Go to https://traefik.your-domain.com/ and authenticate with your dashboard username/password. You should see that a new route and service has been created. A service in Traefik isn't equivalent to a Consul service but we link the two together using a common slug.
+- Go to https://traefik.your-domain.com/ and authenticate with your dashboard username/password. You should see that a new route and service has been created. Note that a service in Traefik isn't equivalent to a Consul service but we're linking them together here with a route.
 - Next visit https://your-domain.com/counter/hello and it should say "Hello" back!
 - Finally test the counter, go to: https://your-domain.com/counter/increment . You should see the number 1 and this should increment on every refresh. If this fails it means `count-webserver` cannot connect to `redis-db`.
 

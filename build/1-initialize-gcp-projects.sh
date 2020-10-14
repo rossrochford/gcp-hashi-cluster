@@ -286,6 +286,7 @@ JSON_STRING_COMBINED=$(echo $JSON_STRING1 $JSON_STRING2 $JSON_STRING3 $JSON_STRI
 
 echo $JSON_STRING_COMBINED >> ./conf/project-info.json
 
+# format json file
 python << END
 import json
 
@@ -299,4 +300,6 @@ END
 
 
 # validate quotas
+# ----------------------
+
 #./scripts/7-validate-quotas.sh $VPC_HOST_PROJECT_ID $CLUSTER_PROJECT_ID

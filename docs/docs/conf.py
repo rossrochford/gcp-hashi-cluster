@@ -33,24 +33,59 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = 'sphinx_typlog_theme'  #"sphinx_rtd_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-html_theme_options = {
-    'canonical_url': '',
-    'logo_only': True,  # False
-    'display_version': False,
-    'prev_next_buttons_location': 'both',  #'bottom',
-    'style_external_links': False,
-    'style_nav_header_background': 'white',
-    # Toc options
-    'collapse_navigation': False,
-    'sticky_navigation': True,
-    'navigation_depth': -1,
-    'includehidden': True,
-    'titles_only': False
-}
+
+if html_theme == 'sphinx_typlog_theme':
+    pygments_style = 'sphinx'
+
+    html_css_files = [
+        # these pages, if not absolute, are relative to html_static_path
+        'css/hide-toc.css'
+    ]
+    html_theme_options = {
+        #'logo': 'tractor_logo_side.svg',
+        #'description': 'Consul/Nomad cluster for Google Cloud Platform',
+        'github_user': 'rossrochford',
+        'github_repo': 'gcp-hashi-cluster',
+        #'color': '#E8371A',
+        'meta_html': '<meta name="generator" content="sphinx">',
+    }
+    html_sidebars = {
+        '**': [
+            #'logo.html',
+            'github.html',
+            'globaltoc.html',
+            #'sponsors.html',
+            'searchbox.html',
+        ]
+    }
+    '''
+    html_sidebars = {
+        "**": [
+            'logo.html',
+            'github.html',
+            'relations.html',
+            'searchbox.html'
+        ]
+    }'''
+elif html_theme == 'sphinx_rtd_theme':
+    html_theme_options = {
+        'canonical_url': '',
+        'logo_only': True,  # False
+        'display_version': False,
+        'prev_next_buttons_location': 'both',  #'bottom',
+        'style_external_links': False,
+        'style_nav_header_background': 'white',
+        # Toc options
+        'collapse_navigation': False,
+        'sticky_navigation': True,
+        'navigation_depth': -1,
+        'includehidden': True,
+        'titles_only': False
+    }

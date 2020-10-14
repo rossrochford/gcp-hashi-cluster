@@ -5,7 +5,14 @@ gcp-hashi-cluster: a Consul/Nomad cluster for Google Cloud
 
 It is designed to get you up and running quickly with minimal configuration and sensible defaults. No prior knowledge of Consul, Nomad or GCP is assumed. This guide will have you running containerized services, accessible from HTTPS endpoints, in under an hour.
 
-In order to achieve this, some compromises have been made:
+The cluster looks something like this:
+
+.. image:: images/hashi-cluster2.png
+
+Typically there are 3 Consul/Nomad servers and at least 1 Vault server. Your services run on the hashi-clients and communicate over a `Consul Connect`__ service mesh. The GCP load-balancer receives incoming HTTPs requests and Traefik routes them to services using a Consul sidecar proxy.
+
+__ https://learn.hashicorp.com/consul/getting-started/connect
+
 
 Limitations and opinionated configurations
 ----------------------------------------------
@@ -16,14 +23,6 @@ Limitations and opinionated configurations
 - The GCP IAM user/resource permissions configurations used here are intended to get you started quickly as a lone developer. You may want more fine-grained IAM restrictions if you're using this within a large development team. The same is true for the Consul, Nomad and Vault ACL configurations.
 
 
-The cluster looks something like this:
-
-.. image:: images/hashi-cluster.png
-
-Typically there are 3 Consul/Nomad servers and at least 1 Vault server. Your services run on the hashi-clients and communicate via a `Consul Connect`__ service mesh. The GCP load-balancer receives incoming requests and Traefik routes them to the services via a Consul Connect sidecar proxy.
-
-__ https://learn.hashicorp.com/consul/getting-started/connect
-
 Remaining work
 --------------------------------
 - Metrics and logging isn't fully integrated with Google Cloud. It's working with some services but not yet with others.
@@ -33,7 +32,7 @@ Remaining work
 - `Forseti <https://github.com/forseti-security/terraform-google-forseti>`_ will be added in future. This allows you to visualize and monitor your GCP IAM roles, permissions and service accounts.
 
 
-.. Caution:: This project is a work in progress, it has not been battle-tested in production or audited by security professionals.
+.. Caution:: This project is a work in progress, it hasn't been battle-tested in production or audited by security professionals.
 
 
 .. toctree::
@@ -60,3 +59,6 @@ Contribute
 License
 -------
 The project is licensed under the 3-clause BSD license.
+
+
+.. todo: try the typlog Sphinx theme: https://github.com/typlog/sphinx-typlog-theme (looks like this: https://tractor.readthedocs.io/en/latest/index.html)
