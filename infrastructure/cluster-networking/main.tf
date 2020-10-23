@@ -148,6 +148,8 @@ resource "google_compute_firewall" "allow-icmp" {
   }
 
   target_tags   = ["allow-icmp"]
+
+  # todo: change to [local.private_subnet_cidr_range] and test nothing breaks (including ssh from GCP console)
   source_ranges = ["0.0.0.0/0"]
 }
 
@@ -188,6 +190,7 @@ resource "google_compute_firewall" "consul-sidecar-fw-ingress" {
 }
 
 
+# only used when var.expose_dashboards is true
 resource "google_compute_firewall" "nomad-consul-dashboards-fw-ingress" {
     name = "nomad-consul-dashboards-fw-ingress"
     network = var.shared_vpc_network_name

@@ -1,8 +1,8 @@
 google-auth==1.22.1
 google-cloud-logging==1.15.1
-google-cloud-storage==1.31.2
+google-cloud-storage==1.32.0
 invoke==1.4.1
 Jinja2==2.11.2
 requests==2.24.0
 pyinotify==0.9.6
-python-consul2==0.1.4
+python-consul2==0.1.5
