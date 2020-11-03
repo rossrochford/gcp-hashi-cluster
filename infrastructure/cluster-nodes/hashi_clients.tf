@@ -25,7 +25,7 @@ resource "google_compute_instance_template" "hashi-client-template" {
 
   metadata = {
     enable-oslogin = "TRUE"
-    node-type = "hashi-client"
+    node-type = "hashi_client"
     num-hashi-servers = var.num_hashi_servers
     ssh-keys = "${var.cluster_tf_service_account_username}:${file(var.cluster_tf_service_account_ssh_public_key_filepath)}"
     project-info = file(var.project_info_filepath)

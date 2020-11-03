@@ -2,8 +2,6 @@
 
 VAULT_HOST=$1
 
-NODE_TYPE=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/node-type)
-
 
 consul acl token create -role-name nomad-client-role -format=json > /tmp/ansible-data/nomad-client-consul-token.json
 TOKEN=$(cat /tmp/ansible-data/nomad-client-consul-token.json | jq -r ".SecretID")

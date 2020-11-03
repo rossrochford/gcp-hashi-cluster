@@ -1,7 +1,11 @@
+import json
+import os
 import subprocess
 import syslog
 
 import requests
+
+HOSTING_ENV = os.environ['HOSTING_ENV']
 
 
 def sys_call(cmd_str, shell=True, print_stdout=False):
@@ -29,6 +33,11 @@ def log_error(st):
 
 
 def get_project_info():
+
+    if HOSTING_ENV == 'vagrant':
+        with open('/scripts/build/conf/project-info.json') as f:
+            return json.loads(f.read())
+
     resp = requests.get(
         'http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info',
         headers={'Metadata-Flavor': 'Google'}

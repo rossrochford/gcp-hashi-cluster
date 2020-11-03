@@ -1,8 +1,9 @@
 #!/bin/bash
 
 BOOTSTRAP_TOKEN=$1
-NODE_TYPE=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/node-type)
-NODE_NAME=$(hostname)   # or could use metadata API
+
+NODE_TYPE=$(metadata_get "node_type")
+NODE_NAME=$(metadata_get "node_name")
 
 # usually CONSUL_HTTP_ADDR is the local agent but the clients haven't yet been started so we'll connect to a server
 export CONSUL_HTTP_ADDR="$(go_discover hashi-server-1):8500"

@@ -1,11 +1,8 @@
 #!/bin/bash
 
 
-PROJECT_INFO=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info)
-
-CONTAINER_REGISTRY_HOSTNAME=$(echo $PROJECT_INFO | jq -r ".container_registry_hostname")
-PROJECT_ID=$(echo $PROJECT_INFO | jq -r ".cluster_service_project_id")
-
+PROJECT_ID=$(metadata_get cluster_service_project_id)
+CONTAINER_REGISTRY_HOSTNAME=$(metadata_get container_registry_hostname)
 
 gcloud auth print-access-token --project $PROJECT_ID | sudo docker login -u oauth2accesstoken --password-stdin "https://$CONTAINER_REGISTRY_HOSTNAME"
 

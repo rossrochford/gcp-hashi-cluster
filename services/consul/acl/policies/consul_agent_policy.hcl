@@ -43,21 +43,28 @@ event_prefix "" {
 # traefik stuff
 
 {% if node_type == "traefik" %}
-key_prefix "traefik-service-routes/" {
-  policy = "write"
-}
-
-key_prefix "traefik-sidecar-upstreams/" {
-  policy = "write"
-}
-
-key_prefix "traefik-dashboards-ip-allowlist/" {
-  policy = "write"
-}
-
-# "traefik-routes-updated" event causes this service to be re-registered in routes_updated.sh
 service_prefix "traefik" {
    policy = "write"
+}
+
+key_prefix "traefik/service-routes/" {
+  policy = "write"
+}
+
+key_prefix "traefik/_sidecar-upstreams/" {
+  policy = "write"
+}
+
+key_prefix "traefik/_services/" {
+  policy = "write"
+}
+
+key_prefix "traefik/_routes/" {
+  policy = "write"
+}
+
+key_prefix "traefik/config/dashboards-ip-allowlist/" {
+  policy = "write"
 }
 {% endif %}
 

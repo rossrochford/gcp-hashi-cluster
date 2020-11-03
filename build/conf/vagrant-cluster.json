@@ -1,0 +1,44 @@
+[
+  {
+    "name": "hashi-server-1",
+    "node_type": "hashi_server",
+    "tags": ["consul-server", "nomad-server", "hashi-server-1"],
+    "vm_memory": 800,
+    "ip": "172.20.20.10"
+  },
+  {
+    "name": "hashi-server-2",
+    "node_type": "hashi_server",
+    "tags": ["consul-server", "nomad-server"],
+    "vm_memory": 800,
+    "ip": "172.20.20.11"
+  },
+  {
+    "name": "hashi-server-3",
+    "node_type": "hashi_server",
+    "tags": ["consul-server", "nomad-server"],
+    "vm_memory": 800,
+    "ip": "172.20.20.12"
+  },
+  {
+    "name": "vault-server-1",
+    "node_type": "vault",
+    "tags": ["vault-server", "consul-client"],
+    "vm_memory": 1024,
+    "ip": "172.20.20.13"
+  },
+  {
+    "name": "traefik-1",
+    "node_type": "traefik",
+    "tags": ["traefik-server", "consul-client", "nomad-client"],
+    "vm_memory": 1024,
+    "ip": "172.20.20.14"
+  },
+  {
+    "name": "hashi-client-1",
+    "node_type": "hashi_client",
+    "tags": ["consul-client", "nomad-client"],
+    "vm_memory": 1024,
+    "ip": "172.20.20.15"
+  }
+]

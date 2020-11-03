@@ -38,7 +38,7 @@ Next open the project-defaults file: `build/conf/project-defaults.json` and fill
 - region  (see ``gcloud compute regions list`` for valid regions)
 - dashboards_password (don't forget this!)
 
-You may also want to adjust the number of `hashi_clients` or `vault_servers`, or increase the size of the instances. The value of `num_hashi_servers` must be 3, 5 or 7, if you set it to 5 or 7, you may also want to update ``bootstrap_expect`` in Consul.
+You may also want to adjust the number of `hashi_clients` or `vault_servers`, or increase the size of the instances. The value of `num_hashi_servers` must be 3, 5 or 7. If you set it to 5 or 7, you may also want to update ``bootstrap_expect`` in Consul.
 
 
 Run the first build script:
@@ -58,17 +58,17 @@ Run the first build script:
 
 This will take about 10 minutes to complete. The following items will be created:
 
-- Two projects named: *vpc-host-project-<uuid>* and *hashi-cluster-<uuid>*. To change these prefixes see *project-defaults.json*.
+- Two GCP projects named: *vpc-host-project-<uuid>* and *hashi-cluster-<uuid>*. To change these prefixes see *project-defaults.json*.
 - Three service accounts, two highly privileged accounts for Terraform, and a third more restricted account that will be assigned to instances.
-- Credentials keys (json) for the service accounts and an SSH key used by Packer, these are downloaded and stored in the *keys/* directory.
+- Credentials keys (json) for the service accounts and an SSH key, these are downloaded and stored in the *keys/* directory.
 - A shared VPC network and a subnetwork for the cluster service project.
 - A public IP address for the load-balancer.
 - A `KMS <https://cloud.google.com/security-key-management>`_ keyring and key.
 - A json file **build/conf/project-info.json** with configuration parameters for Packer, Terraform and the remaining build scripts.
 
 
-Be careful when updating the `project-info.json` file, some values can be altered, some can be altered before starting the cluster but not after, and some should never be altered.
+Be careful when updating the `project-info.json` file, some values can be altered before starting the cluster but not after, and some should never be altered.
 
-Now is a good time to amend `num_hashi_clients` and `hashi_client_size`, or to add additional `sub_domains`. Once the cluster is running, altering sub-domains on the load-balancer's SSL certificate is not trivial.
+Now is a good time to amend `num_hashi_clients` and `hashi_client_size`, or add additional `sub_domains`. Once the cluster is running, altering sub-domains on the load-balancer's SSL certificate is not trivial.
 
 If your services accept websocket connections from clients you need to increase `http_timeout_sec` to the maximum length of your websocket sessions. This will affect the max response timeouts on all HTTPs traffic, you may prefer to define a separate backend service  (`google_compute_backend_service`) for websocket services and keep a shorter timeout for regular HTTPs traffic, see: `Backend Service Timeout <https://cloud.google.com/load-balancing/docs/backend-service#timeout-setting>`_

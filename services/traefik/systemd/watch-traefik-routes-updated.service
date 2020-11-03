@@ -14,7 +14,13 @@ Environment=CONSUL_HTTP_ADDR=none
 Environment=CONSUL_HTTP_TOKEN=none
 Environment=CTN_PREFIX=none
 Environment=CTP_PREFIX=none
-ExecStart=/usr/local/bin/consul watch -type=event -name=traefik-routes-updated /scripts/services/traefik/routes_updated.sh
+Environment=HOSTING_ENV=none
+Environment=PYTHONPATH=/scripts/utilities
+
+# old: ExecStart=/usr/local/bin/consul watch -type=event -name=traefik-routes-updated /scripts/services/traefik/routes_updated.sh
+
+ExecStart=/usr/local/bin/consul watch -type=keyprefix -prefix=traefik/service-routes/ /scripts/services/traefik/routes_updated.sh
+
 KillMode=process
 Restart=always
 RestartSec=4

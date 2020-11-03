@@ -16,6 +16,7 @@ DOMAIN_NAME=$(echo $PROJECT_INFO | jq -r ".domain_name")
 KMS_KEY=$(echo $PROJECT_INFO | jq -r ".kms_encryption_key")
 KMS_KEYRING=$(echo $PROJECT_INFO | jq -r ".kms_encryption_key_ring")
 
+
 CLUSTER_PROJECT_TF_SA_CREDENTIALS_FILE=$(echo $PROJECT_INFO | jq -r ".cluster_tf_service_account_credentials_filepath")
 CLUSTER_PROJECT_TF_SA_SSH_PUBLIC_KEY_FILE=$(echo $PROJECT_INFO | jq -r ".cluster_tf_service_account_ssh_public_key_filepath")
 CLUSTER_PROJECT_TF_SA_SSH_PRIVATE_KEY_FILE=$(echo $PROJECT_INFO | jq -r ".cluster_tf_service_account_ssh_private_key_filepath")
@@ -69,6 +70,7 @@ done <<< "$INSTANCES"
 # -------------------------------------
 VAULT_NODE_IPS=$(gcloud compute instances list --project $CLUSTER_PROJECT_ID --filter="labels.node_type=vault" --format="csv[no-heading](INTERNAL_IP)")
 VAULT_NODE_IPS=$(echo $VAULT_NODE_IPS | awk 1 ORG=' ')  # replace newlines with spaces
+export HOSTING_ENV=gcp
 
 ./scripts/tls-certs/create_vault_tls_certs.sh $VAULT_NODE_IPS
 

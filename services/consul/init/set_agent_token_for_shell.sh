@@ -2,9 +2,8 @@
 
 BOOTSTRAP_TOKEN=$1
 
-NODE_NAME=$(hostname)
-NODE_TYPE=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/node-type)
-
+NODE_TYPE=$(metadata_get "node_type")
+NODE_NAME=$(metadata_get "node_name")
 
 
 if [[ $NODE_NAME == "hashi-server-1" ]]; then

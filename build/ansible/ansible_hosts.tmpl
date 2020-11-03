@@ -1,0 +1,11 @@
+[all:vars]
+ansible_connection=ssh
+ansible_ssh_user=vagrant
+ansible_ssh_pass=vagrant
+
+{% for group_name, ip_addresses in ansible_groups.items() -%}
+[{{ group_name }}]
+   {% for ip_addr in ip_addresses -%}
+{{ ip_addr }}
+   {% endfor %}
+{% endfor %}

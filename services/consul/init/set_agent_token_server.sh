@@ -1,9 +1,9 @@
 #!/bin/bash
 
 BOOTSTRAP_TOKEN=$1
-NODE_TYPE=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/node-type)
-NODE_NAME=$(hostname)   # or could use metadata API
 
+NODE_TYPE=$(metadata_get "node_type")
+NODE_NAME=$(metadata_get "node_name")
 
 cd /scripts/services/consul/
 

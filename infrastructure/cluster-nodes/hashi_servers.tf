@@ -37,7 +37,7 @@ resource "google_compute_instance" "hashi-servers" {
 
   metadata = {
     enable-oslogin = "TRUE"
-    node-type = "hashi-server"
+    node-type = "hashi_server"
     self-elect-as-consul-leader = count.index == 0 ? "TRUE" : "FALSE"
     num-hashi-servers = var.num_hashi_servers
     ssh-keys = "${var.cluster_tf_service_account_username}:${file(var.cluster_tf_service_account_ssh_public_key_filepath)}"

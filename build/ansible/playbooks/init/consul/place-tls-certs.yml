@@ -7,8 +7,15 @@
   become_method: sudo
   vars:
     current_index: "{{ ansible_play_batch.index(inventory_hostname) }}"
-    current_ip: "{{ ansible_default_ipv4.address }}"
+
+    # it's important that {{ current_ip }} is consistent with $IP in create_tls_certs.sh (in both GCP and Vagrant)
+    # options are:   1) {{ inventory_hostname }}   2) {{ ansible_default_ipv4.address }}   3) {{ ansible_hostname }}
+    #    on vagrant:  1) works,  2) doesn't work, gives a different IP,  3) gives the string hostname, not an IP
+    #    on GCP:      1) ???     2) works                                3) ????
+    current_ip: "{{ inventory_hostname }}"
+
   tasks:
+
     - shell: "mkdir -p /etc/consul.d/tls-certs/"
 
     - copy:

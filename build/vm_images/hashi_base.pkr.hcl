@@ -118,7 +118,7 @@ build {
       "sudo chown ${var.cluster_tf_service_account_username}:${var.cluster_tf_service_account_username} /home/packer/scripts",
       "sudo chown ${var.cluster_tf_service_account_username}:${var.cluster_tf_service_account_username} /home/packer/services",
 
-      "sudo mkdir -p /etc/traefik",
+      "sudo mkdir -p /etc/traefik",  # todo: do these in ansible playbook
       "sudo chmod -R 0777 /etc/traefik",
 
       "sudo mkdir -p /home/${var.cluster_tf_service_account_username}/.docker/"  # should this be copied to /home/root/.docker?

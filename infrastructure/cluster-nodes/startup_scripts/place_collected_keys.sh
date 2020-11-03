@@ -1,11 +1,9 @@
 #!/bin/bash
 
-PROJECT_INFO=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info)
-
-REGION=$(echo $PROJECT_INFO | jq -r ".region")
-KMS_KEY=$(echo $PROJECT_INFO | jq -r ".kms_encryption_key")
-KMS_KEYRING=$(echo $PROJECT_INFO | jq -r ".kms_encryption_key_ring")
-
+PROJECT_INFO=$(metadata_get project_info)
+REGION=$(metadata_get region)
+KMS_KEY=$(metadata_get kms_encryption_key)
+KMS_KEYRING=$(metadata_get kms_encryption_key_ring)
 
 sudo mkdir -p /etc/collected-keys
 

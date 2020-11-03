@@ -43,13 +43,14 @@ listener "tcp" {
   tls_disable = 1
 }
 
+{{ if eq ("/hosting-env" | plugin "ctp") "gcp" }}
 seal "gcpckms" {
   project     = "{{ "/project-id" | plugin "ctp" }}"
   region      = "{{ "/region" | plugin "ctp" }}"
   crypto_key    = "{{ "/kms-encryption-key" | plugin "ctp" }}"
   key_ring    = "{{ "/kms-encryption-key-ring" | plugin "ctp" }}"
 }
-
+{{ end }}
 
 disable_mlock = false  # should be false in production
 

@@ -10,10 +10,15 @@ client = google.cloud.logging.Client()
 client.setup_logging()
 
 
+HOSTING_ENV = os.environ['HOSTING_ENV']
+
 LOG_LEVELS = ['debug', 'info', 'warning', 'error', 'critical']
 
 
 def get_instance_resource():
+
+    if HOSTING_ENV == 'vagrant':
+        return None
 
     def _get_instance_id():
         resp = requests.get("http://metadata/computeMetadata/v1/instance/id", headers={"Metadata-Flavor": "Google"})

@@ -123,7 +123,7 @@ __ https://www.consul.io/docs/connect/proxies
 
 .. tip::
 
-    The PathPrefix should be a valid prefix in your service's HTTP API. Traefik can also add/remove path prefixes before forwarding requests to services (see: `StripPrefix`, `HeadersRegexp`).
+    The PathPrefix should be a valid prefix in your service's HTTP API. With a little extra configuration, Traefik can also add/remove path prefixes before forwarding requests to services (see: `StripPrefix`, `HeadersRegexp`).
 
 
 

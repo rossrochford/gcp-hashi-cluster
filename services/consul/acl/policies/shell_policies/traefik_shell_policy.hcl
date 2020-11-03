@@ -44,22 +44,26 @@ session_prefix "" {
 
 # traefik stuff
 
-key_prefix "traefik-service-routes/" {
-  policy = "write"
-}
-
-key_prefix "traefik-sidecar-upstreams/" {
-  policy = "write"
-}
-
-key_prefix "traefik-dashboards-ip-allowlist/" {
-  policy = "write"
-}
-
 service_prefix "traefik" {
    policy = "write"
 }
 
-event "traefik-routes-updated" {
+key_prefix "traefik/service-routes/" {
+  policy = "write"
+}
+
+key_prefix "traefik/_sidecar-upstreams/" {
+  policy = "write"
+}
+
+key_prefix "traefik/_services/" {
+  policy = "write"
+}
+
+key_prefix "traefik/_routes/" {
+  policy = "write"
+}
+
+key_prefix "traefik/config/dashboards-ip-allowlist/" {
   policy = "write"
 }

@@ -23,8 +23,9 @@
   [entryPoints.web]
     address = ":80"
 
-    [entryPoints.web.forwardedHeaders]
-      trustedIPs = ["35.191.0.0/16", "130.211.0.0/22"]  # load-balancer ip addresses
+    # todo: make conditional on environment (gcp vs vagrant)
+    #[entryPoints.web.forwardedHeaders]
+    #  trustedIPs = ["35.191.0.0/16", "130.211.0.0/22"]  # load-balancer ip addresses
 
 
 [ping]

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [[ $HOSTING_ENV == "vagrant" ]]; then
+  # todo: where to write logs?
+  exit 0
+fi
+
 # This isn't efficient to call this repeatedly but it ensures that important
 # errors show up in the Google Logs Viewer console. The current sackdriver config isn't
 # 100% reliable and often fails to pick up the log level, so use this for critical errors.

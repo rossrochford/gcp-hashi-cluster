@@ -74,9 +74,14 @@ if [[ -z $ORGANIZATION_EXISTS ]]; then
 fi
 
 # validate billing account ID
-BILLING_ACCOUNT_EXISTS=$(gcloud beta billing accounts list --filter="ACCOUNT_ID:$BILLING_ACCOUNT" --format="value(ACCOUNT_ID)")
+BILLING_ACCOUNT_EXISTS=$(gcloud beta billing accounts list --filter="ACCOUNT_ID:$BILLING_ACCOUNT" --format="csv[no-heading](ACCOUNT_ID,OPEN)")
 if [[ -z $BILLING_ACCOUNT_EXISTS ]]; then
   echo "billing account '$BILLING_ACCOUNT' not found"; exit 1
+fi
+
+BILLING_ACCOUNT_OPEN=(echo $BILLING_ACCOUNT_EXISTS | cut -d',' -f2)
+if [[ $BILLING_ACCOUNT_OPEN == "False" ]]; then
+  echo "billing account '$BILLING_ACCOUNT' is closed"; exit 1
 fi
 
 # validate region

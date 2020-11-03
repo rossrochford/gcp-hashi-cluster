@@ -1,15 +1,20 @@
 #!/bin/bash
 
-# note: this gets run prematurely on Traefik nodes when the Consul agent starts up due to
-# a known issue with Consul watches, the commands below should still work even with missing KV data
+MAIN_TRAEFIK_HOSTNAME=$(consul kv get traefik/config/main-node-hostname)
+THIS_HOSTNAME=$(hostname)
 
-export PYTHONPATH=/scripts/utilities
+if [[ "$THIS_HOSTNAME" == "$MAIN_TRAEFIK_HOSTNAME" ]]; then
+  python3 /scripts/utilities/py_utilities/consul_kv.py expand-traefik-service-routes
+else
+  sleep 3
+fi
 
-# create /etc/traefik/traefik-consul-service.json with jinja2
 python3 /scripts/utilities/py_utilities/render_config_templates.py "traefik"
 
-/scripts/services/traefik/render_traefik_routes_config.sh
-
+# upstreams may have changed so re-register service, is this necessary?
 consul services register /etc/traefik/traefik-consul-service.json
+
+consul-template -template "/scripts/services/traefik/conf/dynamic-conf.toml.tmpl:/etc/traefik/dynamic-conf.toml" -once
+
 
 # does sidecar proxy need restarting? or a SIGHUP?

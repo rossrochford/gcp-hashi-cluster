@@ -10,7 +10,11 @@ client {
   enabled = true
 
   server_join {
-    retry_join = ["provider=gce project_name={{ "/project-id" | plugin "ctp" }} tag_value=nomad-server"]
+    retry_join = [
+       {{ range $value := ( (plugin "go_discover" "nomad-server") | split " ") -}}
+          {{ "       " }} "{{ $value }}",
+       {{ end -}}
+    ]
     retry_interval = "10s"
   }
 

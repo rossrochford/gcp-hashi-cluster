@@ -2,10 +2,17 @@
 
 TAG=$1
 
-PROJECT_INFO=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info)
+if [[ $HOSTING_ENV == "vagrant" ]]; then
+  QUERY=".hosts_by_tag[\"$TAG\"]|join(\" \")"
+  IP_ADDRS=$(cat /etc/node-metadata.json | jq -r "$QUERY" 2> /dev/null)
 
-PROJECT_ID=$(echo $PROJECT_INFO | jq -r ".cluster_service_project_id")
-REGION=$(echo $PROJECT_INFO | jq -r ".region")
+  echo $IP_ADDRS
+
+  exit 0
+fi
+
+PROJECT_ID=$(metadata_get cluster_service_project_id)
+REGION=$(metadata_get region)
 
 NODE_IP_ADDRESSES=$(/usr/local/bin/discover addrs provider=gce project_name="$PROJECT_ID" zone_pattern="$REGION.*" tag_value="$TAG")
 

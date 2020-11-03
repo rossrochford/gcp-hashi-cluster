@@ -1,0 +1,27 @@
+# Define the parameters for the cluster including
+# hostnames, ip addresses, system resources, and VM type.
+---
+
+- name: hashi-server-1
+  hostname: hashi-server-1
+  node_type: hashi-server
+  ram: 1024
+  ip: 172.20.20.10
+
+- name: hashi-server-2
+  hostname: hashi-server-2
+  node_type: hashi-server
+  ram: 1024
+  ip: 172.20.20.11
+
+- name: hashi-server-3
+  hostname: hashi-server-3
+  node_type: hashi-server
+  ram: 1024
+  ip: 172.20.20.12
+
+- name: hashi-client-1
+  hostname: hashi-client-1
+  node_type: hashi-client
+  ram: 1024
+  ip: 172.20.20.13

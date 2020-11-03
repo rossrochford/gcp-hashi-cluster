@@ -2,6 +2,7 @@
 
 
 # render consul config files
+consul-template -template "/scripts/services/consul/conf/agent/base.hcl.tmpl:/etc/consul.d/base.hcl" -once
 python3 /scripts/utilities/py_utilities/render_config_templates.py "consul"
 
 

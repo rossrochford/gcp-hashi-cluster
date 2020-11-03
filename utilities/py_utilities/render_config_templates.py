@@ -1,17 +1,17 @@
 import json
+import os
 import sys
 
 import jinja2
 
-from py_utilities.consul_kv import (
-    get_traefik_sidecar_upstreams, get_traefik_service_routes,
-    get_traefik_dashboards_ip_allowlist, ConsulCli
-)
+from py_utilities.consul_kv import ConsulCli
+from py_utilities.consul_kv__traefik import get_traefik_sidecar_upstreams
 
+
+HOSTING_ENV = os.environ['HOSTING_ENV']
 
 FILES = {
     'consul': [
-        ('/scripts/services/consul/conf/agent/base.hcl.tmpl', '/etc/consul.d/base.hcl'),
         ('/scripts/services/consul/conf/agent/client.hcl.tmpl', '/etc/consul.d/client.hcl'),
         ('/scripts/services/consul/conf/agent/server.hcl.tmpl', '/etc/consul.d/server.hcl'),
         ('/scripts/services/consul/systemd/consul-server.service.tmpl', '/etc/systemd/system/consul-server.service'),
@@ -21,15 +21,18 @@ FILES = {
         '/scripts/services/consul/acl/policies/shell_policies/read_only_policy.hcl',
         '/scripts/services/consul/acl/policies/shell_policies/traefik_shell_policy.hcl'
     ],
-    'ansible': [
-        ('/scripts/build/ansible/auth.gcp.yml.tmpl', '/scripts/build/ansible/auth.gcp.yml')
+    'ansible_gcp': [
+        ('/scripts/build/ansible/auth.gcp.yml.tmpl', '/scripts/build/ansible/auth.gcp.yml'),
+    ],
+    'ansible_vagrant': [
+        ('/scripts/build/ansible/ansible_hosts.tmpl', '/etc/ansible/hosts')
     ],
 
     'traefik': [
         ('/scripts/services/traefik/conf/traefik-consul-service.json.tmpl', '/etc/traefik/traefik-consul-service.json'),
 
         # we'll maintain a json file with the latest routes, this is used by operations/traefik/fetch-service-routes.sh
-        ('/scripts/services/traefik/conf/traefik-service-routes.json.tmpl', '/etc/traefik/traefik-service-routes.json')
+        # ('/scripts/services/traefik/conf/traefik-service-routes.json.tmpl', '/etc/traefik/traefik-service-routes.json')
     ]
 }
 
@@ -45,20 +48,21 @@ def do_template_render(template_fp, json_data):
 
 def render_templates(service, extra_args):
 
+    if service == 'ansible':
+        service = 'ansible_' + HOSTING_ENV
+
     files = FILES[service]
 
     if service == 'traefik':
         consul_cli = ConsulCli()
         data = {
-            'sidecar_upstreams': get_traefik_sidecar_upstreams(consul_cli),
-            'traefik_routes': get_traefik_service_routes(consul_cli),
-            'dashboards_ip_allowlist': get_traefik_dashboards_ip_allowlist(consul_cli)
+            'sidecar_upstreams': get_traefik_sidecar_upstreams(consul_cli)[0]
         }
     else:
         with open('/etc/node-metadata.json') as f:
             data = json.loads(f.read())
 
-    if service == 'ansible':
+    if service.startswith('ansible'):
         # comma-separated list of instance names
         data['new_hashi_clients'] = extra_args[0].split(',') if extra_args else []
 
@@ -74,10 +78,10 @@ def render_templates(service, extra_args):
 
 
 if __name__ == '__main__':
-    service = sys.argv[1]
+    service_slug = sys.argv[1]
     extra_args = sys.argv[2:]
 
-    if service not in FILES:
-        exit('unexpected service name: "%s"' % service)
+    if service_slug not in FILES and service_slug != 'ansible':
+        exit('unexpected service name: "%s"' % service_slug)
 
-    render_templates(service, extra_args)
+    render_templates(service_slug, extra_args)

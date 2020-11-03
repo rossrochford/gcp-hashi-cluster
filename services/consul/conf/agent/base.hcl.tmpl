@@ -8,7 +8,11 @@ log_level = "DEBUG"
 log_json = true
 enable_syslog = false
 
-retry_join = ["provider=gce project_name={{ cluster_service_project_id }} tag_value=consul-server"]
+retry_join = [
+{{ range $value := ( (plugin "go_discover" "consul-server") | split " ") -}}
+  {{ "    " }} "{{ $value }}",
+{{ end -}}
+]
 retry_interval = "3s"
 
 
@@ -39,6 +43,8 @@ ports {
 }
 
 /*
+# note: jinja2 code is no longer rendered because base.hcl.tmpl
+# was removed from render_config_templates.py
 {% if node_type == "vault" %}
 client_addr = "127.0.0.1"
 {% else %}

@@ -10,8 +10,14 @@
       burst = 300
       period = 3
 
+    {{- with $ARRAY := (keyOrDefault "traefik/config/dashboards-ip-allowlist" "[\"0.0.0.0/0\"]") | parseJSON }}
     [http.middlewares.dashboards-ip-allowlist.ipWhiteList]
-      sourceRange = [{{ range tree "traefik-dashboards-ip-allowlist/" }}"{{ .Value }}",{{ end }}]
+        sourceRange = [
+        {{- range $V := $ARRAY -}}
+          "{{ $V }}",
+        {{- end -}}
+        ]
+    {{ end }}
 
     [http.middlewares.strip-bc-session-prefix.stripPrefixRegex]
       regex = ["/bc-session-[a-z0-9]{14}"]
@@ -19,28 +25,37 @@
   [http.routers]
     [http.routers.traefik-dashboard]
       rule = "Host(`traefik.{{ "/domain-name" | plugin "ctp" }}`)"
-      middlewares = ["dashboards-ip-allowlist", "source-ratelimit", "dashboard-auth"]
+      middlewares = [
+        "dashboards-ip-allowlist", "source-ratelimit", {{ if ne (env "HOSTING_ENV") "vagrant" }} "dashboard-auth" {{ end }}
+      ]
       entryPoints = ["web"]
       service = "api@internal"
 
     [http.routers.consul-ui]
       rule = "Host(`consul.{{ "/domain-name" | plugin "ctp" }}`)"
-      middlewares = ["dashboards-ip-allowlist", "source-ratelimit", "dashboard-auth"]
+      middlewares = [
+        "dashboards-ip-allowlist", "source-ratelimit", {{ if ne (env "HOSTING_ENV") "vagrant" }} "dashboard-auth" {{ end }}
+      ]
       entryPoints = ["web"]
       service = "consul-ui"
 
     [http.routers.nomad-ui]
       rule = "Host(`nomad.{{ "/domain-name" | plugin "ctp" }}`)"
-      middlewares = ["dashboards-ip-allowlist", "source-ratelimit", "dashboard-auth"]
+      middlewares = [
+        "dashboards-ip-allowlist", "source-ratelimit", {{ if ne (env "HOSTING_ENV") "vagrant" }} "dashboard-auth" {{ end }}
+      ]
       entryPoints = ["web"]
       service = "nomad-ui"
 
-    {{ range tree "traefik-service-routes/" }}
+    {{ range tree "traefik/_routes/" }}
     [http.routers.{{ .Key }}-router]
       {{ with $d := .Value | parseJSON }}
       service = "{{ $d.traefik_service_name }}"
       rule = "{{ $d.routing_rule }}"
-      middlewares = [{{ range $d.middlewares }}"{{ . }}",{{ end }}]
+      middlewares = [
+        "source-ratelimit",
+        {{ range $d.middlewares }}"{{ . }}",{{ end }}
+      ]
       entryPoints = ["web"]
       {{ end }}
     {{ end }}
@@ -57,11 +72,13 @@
         [[http.services.nomad-ui.loadBalancer.servers]]
           url = "http://{{ "hashi-server-1" | plugin "go_discover" }}:4646/"
 
-  {{ range tree "traefik-service-routes/" }}
-    [http.services.{{ .Key }}]
-      [http.services.{{ .Key }}.loadBalancer]
-        [[http.services.{{ .Key }}.loadBalancer.servers]]
-        {{ range (.Value | parseJSON).service_addresses }}
+  {{ range tree "traefik/_services/" }}
+    {{ with $d := .Value | parseJSON }}
+    [http.services.{{ $d.traefik_service_name }}]
+      [http.services.{{ $d.traefik_service_name }}.loadBalancer]
+        [[http.services.{{ $d.traefik_service_name }}.loadBalancer.servers]]
+        {{ range $d.service_addresses }}
            url = "{{ . }}"
         {{ end }}
+    {{ end }}
   {{ end }}

@@ -1,19 +1,27 @@
 #!/bin/bash
 
-PROJECT_INFO=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/project-info)
-NUM_HASHI_SERVERS=$(echo $PROJECT_INFO | jq -r ".num_hashi_servers")
-
+NUM_HASHI_SERVERS=$(metadata_get num_hashi_servers)
 
 vault operator init -key-shares=1 -key-threshold=1 -format=json > /tmp/ansible-data/vault-init-keys.json
 
 ROOT_TOKEN=$(cat /tmp/ansible-data/vault-init-keys.json | jq -r ".root_token")
 export VAULT_TOKEN="$ROOT_TOKEN"
 
-vault login $ROOT_TOKEN
+
+UNSEAL_KEY="none"
+
+if [[ $HOSTING_ENV == "vagrant" ]]; then
+  UNSEAL_KEY=$(cat /tmp/ansible-data/vault-init-keys.json | jq -r .unseal_keys_b64[0])
+  vault operator unseal $UNSEAL_KEY
+fi
+
+vault login "$ROOT_TOKEN"
 
 vault secrets enable -path=secret kv-v2
 
-vault auth enable gcp
+if [[ $HOSTING_ENV == "gcp" ]]; then
+  vault auth enable gcp
+fi
 
 
 # allows Nomad to generate tokens for tasks
@@ -49,3 +57,4 @@ print(json.dumps({"nomad_vault_tokens": tokens}))
 echo $ROOT_TOKEN
 echo $WRITEONLY_TOKEN
 echo $TOKENS_JSON
+echo $UNSEAL_KEY

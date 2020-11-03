@@ -1,0 +1,95 @@
+# -*- mode: ruby -*-
+# # vi: set ft=ruby :
+
+Vagrant.require_version ">= 1.6.0"
+VAGRANTFILE_API_VERSION = "2"
+
+require 'json'  # require 'yaml'
+
+init_script = File.read("./startup_scripts/initialize_instance.sh")
+
+REPO_PATH = File.expand_path('../..', File.dirname(__FILE__))
+
+
+# servers = YAML.load_file('vagrant-cluster.yaml')
+json_filepath = File.join(REPO_PATH, '/build/conf/vagrant-cluster.json')
+
+servers = JSON.parse(File.read(json_filepath))
+
+#box_file = "ubuntu/focal64"
+#box_file = "file:///home/ross/code/gcp-hashi-cluster/infrastructure/cluster-nodes-local/packer/base_image/package.box"
+
+
+# - consider using swapfiles to reduce Vm memory use of hashi-server-*, vault and traefik: https://github.com/ianmiell/vagrant-swapfile/blob/master/vagrant-swapfile.sh
+# - persistent storage: https://github.com/kusnier/vagrant-persistent-storage
+
+box_file = "file://" + File.join(File.dirname(__FILE__), 'packer/base_image/package.box')
+
+
+# Create boxes
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  # Iterate through entries in YAML file
+  servers.each do |server_data|
+    # Moving forward, we should mount the specific
+    # config files needed...nothing more.
+    # config.vm.synced_folder ".", "/vagrant", disabled: true
+    config.vm.define server_data["name"] do |srv|
+
+      srv.vm.box = box_file
+      srv.vm.synced_folder REPO_PATH, "/repo"
+
+      config.vm.provision "file", source: REPO_PATH + "/build", destination: "/tmp/scripts/build"
+      config.vm.provision "file", source: REPO_PATH + "/operations", destination: "/tmp/scripts/operations"
+      config.vm.provision "file", source: REPO_PATH +  "/services", destination: "/tmp/scripts/services"
+      config.vm.provision "file", source: REPO_PATH + "/utilities", destination: "/tmp/scripts/utilities"
+      if File.exist?("/tmp/ansible-data/vault-tls-certs.zip")
+        config.vm.provision "file", source: "/tmp/ansible-data/vault-tls-certs.zip", destination: "/tmp/ansible-data/vault-tls-certs.zip"
+      end
+
+      srv.vm.provision "shell",
+                            inline: init_script,
+                            env: {
+                                "NODE_IP" => server_data["ip"],
+                                "NODE_NAME" => server_data["name"],
+                                "NODE_TYPE" => server_data["node_type"]
+                            }
+                       # , privileged: false
+
+      # srv.vm.cloud_init content_type: "text/x-shellscript", path: "./foo/bar.sh"
+
+      srv.ssh.username = "vagrant"
+      srv.ssh.password = "vagrant"
+      srv.ssh.insert_key = true
+      srv.ssh.keys_only = false
+
+      srv.vm.hostname = server_data["name"]
+      srv.vm.network "private_network", ip: server_data["ip"]
+
+      if server_data["name"] == "traefik-1"
+          srv.vm.network "forwarded_port", guest: 80, host: 8085
+          # another option: https://github.com/vagrant-landrush/landrush
+      end
+
+      srv.vm.provider :virtualbox do |vb|
+        vb.name = server_data["name"]
+        vb.memory = server_data["vm_memory"]
+        # vb.user_data = File.read(...)
+      end
+    end
+  end
+end
+
+
+# to print to console do:
+#old_sync = $stdout.sync
+#$stdout.sync = true
+#puts json_filepath
+#exit
+
+
+# todo:
+# get vault working with vagrant env:
+# 1) wrap 'seal' config in if statement (and store RUN_ENV in consul)
+# 2) put 'vault auth enable gcp' in if statement
+# 3) run 'vault operator unseal' on vault-server-1  (do manually initially, then put it in ansible playbook)

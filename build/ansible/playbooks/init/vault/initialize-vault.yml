@@ -40,25 +40,31 @@
   become_method: sudo
   environment:
     VAULT_ADDR: "http://127.0.0.1:8200"
+    # todo: temp
+    HOSTING_ENV: "vagrant"
+
   tasks:
     - name: "initialise Vault policies/roles and create Vault tokens for Nomad server agents"
       shell: "sleep 1; /scripts/services/vault/init/vault_init.sh"
       register: "vault_init_result"
     - set_fact:
-        vault_root_token: "{{ vault_init_result.stdout_lines[-3] }}"
+        vault_root_token: "{{ vault_init_result.stdout_lines[-4] }}"
     - set_fact:
-        writeonly_vault_token: "{{ vault_init_result.stdout_lines[-2] }}"
+        writeonly_vault_token: "{{ vault_init_result.stdout_lines[-3] }}"
     - set_fact:
-        nomad_vault_tokens_json: "{{ vault_init_result.stdout_lines[-1] }}"
+        nomad_vault_tokens_json: "{{ vault_init_result.stdout_lines[-2] }}"
+    - set_fact:
+        vault_unseal_key: "{{ vault_init_result.stdout_lines[-1] }}"
 
     # add write-only token to /etc/environment on vault-server-1
-    - shell: "/scripts/services/vault/init/set_token_for_shell.sh {{ vault_init_result.stdout_lines[-2] }}"
-
+    - shell: "/scripts/services/vault/init/set_token_for_shell.sh {{ vault_init_result.stdout_lines[-3] }}"
 
 
 # write the facts above to local files on the machine running this playbook, a little hacky
-- hosts: 127.0.0.1
-  connection: local
+- hosts: hashi_server_1
+  remote_user: "{{ lookup('env','ANSIBLE_REMOTE_USER') }}"
+  become: yes
+  become_method: sudo
   tasks:
     - copy:
         content: "{{ hostvars[item]['nomad_vault_tokens_json'] }}"
@@ -72,7 +78,10 @@
         content: "{{ hostvars[item]['vault_root_token'] }}"
         dest: "/tmp/ansible-data/vault-root-token.txt"
       with_items: "{{ groups['vault_server_1'] }}"
-
+    - copy:
+        content: "{{ hostvars[item]['vault_unseal_key'] }}"
+        dest: "/tmp/ansible-data/vault-unseal-key.txt"
+      with_items: "{{ groups['vault_server_1'] }}"
 
 
 - hosts: vault_servers:hashi_servers:traefik:hashi_clients

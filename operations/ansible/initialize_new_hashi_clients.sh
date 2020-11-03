@@ -2,7 +2,7 @@
 
 mkdir -p /tmp/ansible-data/
 
-NODE_IP=$(ip route get 8.8.8.8 | awk '{print $7; exit}')
+NODE_IP=$(metadata_get node_ip)
 
 export ANSIBLE_REMOTE_USER=$USER
 
