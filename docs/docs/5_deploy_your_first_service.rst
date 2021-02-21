@@ -1,4 +1,4 @@
-*********************************
+create_vault_tls_certs*********************************
 Deploy your first service
 *********************************
 
@@ -218,3 +218,82 @@ __ https://www.vaultproject.io/api/secret/kv/kv-v2.html
     }
 
 - Your secrets will be available to the service containers as environment variables: ``FACEBOOK_KEY`` and ``FACEBOOK_SECRET``.
+
+Creating a Vault scope-limited user
+-----------------------------
+
+First, enable the Userpass auth method:
+
+.. code-block:: console
+    vault auth enable userpass
+
+
+Next, add yourself as a Vault user without any policies:
+
+.. code-block:: console
+    vault write auth/userpass/users/<name> password=<pwd>
+
+
+Be sure to specify an actual username for <name> and a password for <pwd> without the angle brackets.
+
+Now, you can sign into the Vault UI by selecting the Username method and providing your username and password.
+
+You can also login with the Vault CLI:
+
+.. code-block:: console
+    vault login -method=userpass username=<name> password=<pwd>
+
+
+Both of these login methods give you a Vault token with Vault's default policy that grants some very limited capabilities.
+
+To confirm that your new token is being used, run this command:
+
+.. code-block:: console
+    vault token lookup
+
+
+You will see that the display_name of the current token is "userpass-<name>" where <name> is your username and that the only policy listed for the token is the "default" policy.
+
+Try to read the secret you wrote to the KV v2 secrets engine in the last challenge:
+
+.. code-block:: console
+    vault kv get kv/a-secret
+
+
+You will get an error message because your token is not authorized to read any secrets yet. That is because Vault policies are "deny by default", meaning that a token can only read or write a secret if it is explicitly given permission to do so by one of its policies.
+
+Suppose we want distinct secret paths per user. Create a file user-policy.hcl, replacing the <user> strings:
+
+.. code-block:: console
+    path "secret/data/<user>/*" {
+        capabilities = ["create", "update", "read", "delete"]
+    }
+    path "secret/delete/<user>/*" {
+        capabilities = ["update"]
+    }
+    path "secret/metadata/<user>/*" {
+        capabilities = ["list", "read", "delete"]
+    }
+    path "secret/destroy/<user>/*" {
+        capabilities = ["update"]
+    }
+    # Additional access for UI
+    path "secret/metadata" {
+        capabilities = ["list"]
+    }
+
+
+Now add this policy to vault and assign it to your user:
+
+.. code-block:: console
+    vault policy write the-user-policy /vault/policies/user-policy.hcl
+    vault write auth/userpass/users/<user_1>/policies policies=the-user-policy
+
+
+Your user will now be permitted to do read and write from the `secret/<user>` prefix path:
+
+.. code-block:: console
+
+    vault kv get secret/<user>/age
+    vault kv put secret/<user>/weight weight=150
+

@@ -2,7 +2,7 @@
 Description="Consul watcher for event: traefik-routes-updated"
 Requires=network-online.target
 After=network-online.target
-StartLimitInterval=180
+StartLimitIntervalSec=180
 StartLimitBurst=18
 
 [Service]

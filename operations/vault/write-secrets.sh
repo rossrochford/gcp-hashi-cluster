@@ -4,7 +4,7 @@ SECRETS_FILEPATH=$1
 
 
 if [[ (-z $SECRETS_FILEPATH) || (! -f $SECRETS_FILEPATH) ]]; then
-  echo "error: SECRETS_FILEPATH argument missing or file doesn't exit"; exit 1
+  echo "error: SECRETS_FILEPATH argument missing or file doesn't exist"; exit 1
 fi
 
 if [[ -z $HASHI_REPO_DIRECTORY ]]; then

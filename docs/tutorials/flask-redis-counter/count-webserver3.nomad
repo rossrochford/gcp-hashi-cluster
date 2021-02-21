@@ -11,31 +11,32 @@ job "count-service-job" {
     }
     network {
       mode = "bridge"
+      port "http" { to = 8080 }
     }
 
     service {
       name = "count-webserver"
-      port = "8080"
+      port = "http"
+      address_mode = "alloc"
 
       connect {
         sidecar_service {
-          proxy {
+          /*proxy {
             upstreams {
               destination_name = "redis-db"
               local_bind_port = 16379
             }
-          }
+          }*/
         }
       }
 
       check {
         type     = "http"
-        port     = "8080"
+        port     = "http"
         path     = "/counter/hello"
         interval = "8s"
         timeout  = "2s"
       }
-
     }
 
     task "count-service-task" {
@@ -44,24 +45,6 @@ job "count-service-job" {
       config {
         image = "nomad/count-webserver:v0.1"
       }
-
-      /*
-      vault {
-        policies = ["nomad-client-base"]
-        change_mode   = "noop"
-      }
-
-      template {
-        data = <<EOH
-          {{ with secret "secret/data/nomad/counter/social-auth-facebook" }}
-          FACEBOOK_KEY="{{ .Data.data.app_key }}"
-          FACEBOOK_SECRET="{{ .Data.data.app_secret }}"
-          {{ end }}
-EOH
-        destination = "secrets/file.env"
-        env         = true
-      }
-      */
 
     }
   }

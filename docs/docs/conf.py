@@ -3,6 +3,8 @@ import sphinx_typlog_theme
 
 # For configuration docs see: https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+# todo: consider rewriting dos using mdBook: https://github.com/rust-lang/mdBook
+
 
 # -- Project information -----------------------------------------------------
 

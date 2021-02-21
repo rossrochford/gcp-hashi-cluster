@@ -17,7 +17,7 @@ __ https://learn.hashicorp.com/consul/getting-started/connect
 Limitations and opinionated configurations
 ----------------------------------------------
 - The cluster is configured to run in a **single** region, though VMs are spread across multiple zones within this region for high availability.
-- All VMs run Ubuntu 20.04 (18.04 is also supported). To use another OS you will need to modify the packer scripts. The the local build scripts (mainly bash and Terraform) have only been tested on a Ubuntu development machine.
+- All VMs run Ubuntu 20.04 (18.04 is also supported). To use another OS you will need to modify the packer scripts. The local build scripts (mainly bash and Terraform) have only been tested on a Ubuntu development machine.
 - It is assumed you have a DNS domain name for this cluster. One domain name per cluster is assumed, though you may add sub-domains. Traefik is used as the cluster's reverse proxy, fronted by a Google load-balancer that manages the SSL certificates.
 - This guide uses a `Shared VPC <https://cloud.google.com/vpc/docs/shared-vpc>`_ setup so we can run separate "service projects" with shared networking configuration at the organization level. This is good practice generally but it means that a regular Gmail account won't do, you'll need a Cloud Identity or GSuite user account so that a GCP Organization can be created.
 - The GCP IAM user/resource permissions configurations used here are intended to get you started quickly as a lone developer. You may want more fine-grained IAM restrictions if you're using this within a large development team. The same is true for the Consul, Nomad and Vault ACL configurations.
